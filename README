@@ -30,3 +30,6 @@ Add average line and hour bar graph:
 
 Print statistics
 	ep statistics day week 
+
+To show a range?
+	ep graph range 4/9/2012 4/10/2012
