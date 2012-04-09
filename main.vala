@@ -111,7 +111,7 @@ void statistics(EnergyStorage es, string[] argv, uint offset)
 		for(uint i = 0; i < 24; i++)
 		{
 			if(num_hour[i] > 0)
-				stdout.printf("%2u %8.02f\n", i+1, hour[i]/(double)num_hour[i]);
+				stdout.printf("%2u %8.02f\n", i, hour[i]/(double)num_hour[i]);
 
 		}
 	}
