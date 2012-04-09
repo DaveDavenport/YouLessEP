@@ -1,0 +1,15 @@
+Import download json files:
+
+	ep import *.json
+
+
+Show graph
+
+	ep graph
+
+Add average line and hour bar graph:
+
+	ep graph average bars
+
+Print statistics
+	ep statistics day week 
