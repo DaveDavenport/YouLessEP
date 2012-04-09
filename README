@@ -15,7 +15,7 @@ Import download json files:
 
 	ep import output.json
 
-This will import the data into ep.sqlite3 database.
+This will import the data into es.sqlite3 database.
 
 
 === Show data === 
