@@ -1,7 +1,24 @@
+== Energy Point == 
+This is a small tool to parse and display statistics from a youless.
+See: http://youless.nl/ 
+
+
+=== Download data ===
+Download json file from youless. Do this atleast every 30 minutes.
+Overlap is no problem, EnergyPoint will check for this.
+	
+	wget http://youless/a?f=j -o output.json
+
+
+=== Import data ===
 Import download json files:
 
-	ep import *.json
+	ep import output.json
 
+This will import the data into ep.sqlite3 database.
+
+
+=== Show data === 
 
 Show graph
 

@@ -7,8 +7,9 @@ PKGS=\
 	json-glib-1.0\
 	sqlite3
 
-VALA_FLAGS=$(foreach PKG, $(PKGS), --pkg=$(PKG))
-
+##
+# Check packages
+##
 PKG_EXISTS=$(shell pkg-config --exists $(PKGS);echo $$?)
 PKG_FALSE=1
 
@@ -16,13 +17,16 @@ ifeq ($(PKG_EXISTS),$(PKG_FALSE))
 $(error Not all dependencies are met)
 endif
 
+##
+# VALA flags.
+##
+VALA_FLAGS=$(foreach PKG, $(PKGS), --pkg=$(PKG)) -g
 
 ##
 # Build program
 ##
-$(PROGRAM): $(SOURCES)
+$(PROGRAM): $(SOURCES) | Makefile
 	valac -o $@ $^ $(VALA_FLAGS) 
-
 
 ###
 # Clean up
