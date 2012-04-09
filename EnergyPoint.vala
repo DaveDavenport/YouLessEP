@@ -19,6 +19,8 @@ class EnergyStorage
 
 	// Prepared statements.
 	private Statement insert_ep;
+	private Statement transaction_start;
+	private Statement transaction_stop;
 
 	/**
 	 * Create a new Storage. 
@@ -46,6 +48,26 @@ class EnergyStorage
 			""";
 
 		if(db.prepare_v2(insert_db_str,-1, out insert_ep) == 1)
+		{
+			GLib.error("Failed to create stmt: %s", db.errmsg());
+		}
+
+
+		const string transaction_start_str = """
+				BEGIN TRANSACTION;
+			""";
+		if(db.prepare_v2(insert_db_str,-1, out insert_ep) == 1)
+		{
+			GLib.error("Failed to create stmt: %s", db.errmsg());
+		}
+		const string transaction_stop_str = """
+				COMMIT;
+			""";
+		if(db.prepare_v2(transaction_start_str,-1, out transaction_start) == 1)
+		{
+			GLib.error("Failed to create stmt: %s", db.errmsg());
+		}
+		if(db.prepare_v2(transaction_stop_str,-1, out transaction_stop) == 1)
 		{
 			GLib.error("Failed to create stmt: %s", db.errmsg());
 		}
@@ -93,6 +115,7 @@ class EnergyStorage
 		DateTime dt = new DateTime.from_timeval_local(val);	
 
 		var val_obj = obj.get_array_member("val");
+
 		foreach(weak Json.Node el in val_obj.get_elements())
 		{
 			string? a = el.get_string();
@@ -103,9 +126,18 @@ class EnergyStorage
 				if(this.add_point(ep)) retv++;
 			}
 			dt = dt.add_seconds((double)60.0);
-
 		}
 		return retv;
+	}
+
+
+	public void start_transaction()
+	{
+		transaction_start.step();
+	}
+	public void stop_transaction()
+	{
+		transaction_stop.step();
 	}
 
 	/**

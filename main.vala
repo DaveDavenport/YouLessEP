@@ -6,6 +6,7 @@ using GLib;
 void importing_files(EnergyStorage es, string[] argv, uint offset)
 {
 	uint total = 0;
+	es.start_transaction();
 	for(uint i = offset ; i < argv.length; i++)
 	{
 		stdout.printf("Importing file: '%s': ", argv[i]);
@@ -22,6 +23,7 @@ void importing_files(EnergyStorage es, string[] argv, uint offset)
 			stdout.printf("Failed to import file: '%s'\n", e.message);
 		}
 	}
+	es.stop_transaction();
 	stdout.printf("Imported a total of %u points\n", total);
 }
 
