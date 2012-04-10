@@ -21,6 +21,9 @@ class EnergyStorage
 	private Statement insert_ep;
 	private Statement transaction_start;
 	private Statement transaction_stop;
+	private Statement stop_date_stmt;
+	private Statement start_date_stmt;
+	private Statement get_data_stmt;
 
 	/**
 	 * Create a new Storage. 
@@ -69,6 +72,32 @@ class EnergyStorage
 			GLib.error("Failed to create stmt: %s", db.errmsg());
 		}
 		if(db.prepare_v2(transaction_stop_str,-1, out transaction_stop) == 1)
+		{
+			GLib.error("Failed to create stmt: %s", db.errmsg());
+		}
+
+		const string stop_date_stmt_str = """
+			SELECT MAX(time) FROM data WHERE time <= ?;
+		""";
+
+		if(db.prepare_v2(stop_date_stmt_str,-1, out stop_date_stmt) == 1)
+		{
+			GLib.error("Failed to create stmt: %s", db.errmsg());
+		}
+
+		const string start_date_stmt_str = """
+			SELECT MIN(time) FROM data WHERE time >= ?;
+		""";
+
+		if(db.prepare_v2(start_date_stmt_str,-1, out start_date_stmt) == 1)
+		{
+			GLib.error("Failed to create stmt: %s", db.errmsg());
+		}
+
+		const string get_data_stmt_str = """
+			SELECT * FROM data WHERE time >= ? AND time <= ? ORDER BY time ASC; 
+                """;
+		if(db.prepare_v2(get_data_stmt_str,-1, out get_data_stmt) == 1)
 		{
 			GLib.error("Failed to create stmt: %s", db.errmsg());
 		}
@@ -149,22 +178,17 @@ class EnergyStorage
 		if(start == null) start = this.get_starting_datetime();
 		if(stop == null) stop = this.get_stopping_datetime();
 		List<EnergyPoint> eps = new List<EnergyPoint>();
-		// Create index
-		const string create_index = """
-			SELECT * FROM data WHERE time >= ? AND time <= ? ORDER BY time ASC; 
-                """;
-		
-		Statement stmt;
-		db.prepare_v2(create_index, -1, out stmt);
 
-		stmt.bind_int64(1,start.to_unix());
-		stmt.bind_int64(2,stop.to_unix());
 
-		int cols,rc=0;
-		cols = stmt.column_count();
+		get_data_stmt.reset();
+
+		get_data_stmt.bind_int64(1,start.to_unix());
+		get_data_stmt.bind_int64(2,stop.to_unix());
+
+		int rc=0;
 		do {
 
-			rc = stmt.step();
+			rc = get_data_stmt.step();
 
 			switch(rc)
 			{
@@ -172,8 +196,8 @@ class EnergyStorage
 					break;
 				case Sqlite.ROW:
 					EnergyPoint ep = new EnergyPoint();
-					ep.time  = new GLib.DateTime.from_unix_local(stmt.column_int64(0));
-					ep.power = stmt.column_int(1);
+					ep.time  = new GLib.DateTime.from_unix_local(get_data_stmt.column_int64(0));
+					ep.power = get_data_stmt.column_int(1);
 					eps.append(ep);
 					break;
 				default:
@@ -227,30 +251,25 @@ class EnergyStorage
 
 	public DateTime? get_starting_datetime(DateTime? time = null)
 	{
-		// Create index
-		const string create_index = """
-			SELECT MIN(time) FROM data WHERE time >= ?;
-		""";
+		// Reset the query.
+		start_date_stmt.reset();
 
-		Statement stmt;
-		db.prepare_v2(create_index, -1, out stmt);
 		if(time != null)
-			stmt.bind_int64(1,time.to_unix());
+			start_date_stmt.bind_int64(1,time.to_unix());
 		else
-			stmt.bind_int64(1,0);
+			start_date_stmt.bind_int64(1,0);
 
-		int cols,rc=0;
-		cols = stmt.column_count();
+		int rc=0;
 		do {
 
-			rc = stmt.step();
+			rc = start_date_stmt.step();
 
 			switch(rc)
 			{
 				case Sqlite.DONE:
 					break;
 				case Sqlite.ROW:
-					return new GLib.DateTime.from_unix_local(stmt.column_int64(0));
+					return new GLib.DateTime.from_unix_local(start_date_stmt.column_int64(0));
 				default:
 					stdout.printf ("Error: %d, %s\n", rc, db.errmsg ());
 					break;
@@ -258,38 +277,34 @@ class EnergyStorage
 		} while (rc == Sqlite.ROW);
 		return null;
 	}
+
 	public DateTime? get_stopping_datetime(DateTime? time = null)
 	{
-		// Create index
-		const string create_index = """
-			SELECT MAX(time) FROM data WHERE time <= ?;
-		""";
-
-		Statement stmt;
-		db.prepare_v2(create_index, -1, out stmt);
+		// Reset the query.
+		stop_date_stmt.reset();
 
 		if(time != null)
-			stmt.bind_int64(1,time.to_unix());
+			stop_date_stmt.bind_int64(1,time.to_unix());
 		else
-			stmt.bind_int64(1,int64.MAX);
+			stop_date_stmt.bind_int64(1,int64.MAX);
 
-		int cols,rc=0;
-		cols = stmt.column_count();
+		int rc=0;
 		do {
 
-			rc = stmt.step();
+			rc = stop_date_stmt.step();
 
 			switch(rc)
 			{
 				case Sqlite.DONE:
 					break;
 				case Sqlite.ROW:
-					return new GLib.DateTime.from_unix_local(stmt.column_int64(0));
+					return new GLib.DateTime.from_unix_local(stop_date_stmt.column_int64(0));
 				default:
 					stdout.printf ("Error: %d, %s\n", rc, db.errmsg ());
 					break;
 			}
 		} while (rc == Sqlite.ROW);
+
 		return null;
 	}
 }
