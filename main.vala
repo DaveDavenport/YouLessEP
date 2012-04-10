@@ -31,7 +31,7 @@ void importing_files(EnergyStorage es, string[] argv, uint offset)
  * Parse range.
  * Only supports dates atm.
  */
-uint parse_range(string[] argv, uint offset, out DateTime start, out DateTime stop)
+uint parse_range(string[] argv, uint offset, ref DateTime start, ref DateTime stop)
 {
 	uint retv = 0;
 	if(argv.length >= (offset+1)) 
@@ -55,6 +55,75 @@ uint parse_range(string[] argv, uint offset, out DateTime start, out DateTime st
  * Statistics. 
  */
 
+/* Show average over day. */
+void statistics_day(EnergyStorage es, DateTime tstart, DateTime tstop) 
+{
+	double hour[24] = {0};
+	int num_hour[24] = {0};
+
+	stdout.printf("========== Day hours ==========\n");
+
+	var start = tstart;
+	var stop = start.add_minutes(-start.get_minute());
+	while(stop.compare(tstop)< 0)
+	{
+		start = stop;
+		int d = start.get_hour();
+		stop  = start.add_hours(1);
+
+		hour[d] += es.get_average_energy(start, stop);
+		num_hour[d]++;
+
+	}
+	double total = 0;
+	for(uint i = 0; i < 24; i++)
+	{
+		if(num_hour[i] > 0)
+		{
+			stdout.printf("%2u                %8.02f W\n", i, hour[i]/(double)num_hour[i]);
+			total += hour[i]/(double)num_hour[i];
+		}
+	}
+	stdout.printf("===============================\n");
+	stdout.printf("Total:            %8.02f kWh\n", total/1e3);
+}
+/* show average in a week (per day) */
+void statistics_week(EnergyStorage es, DateTime tstart, DateTime tstop) 
+{
+	double week[7] = {0};
+	int num_week[7] = {0};
+
+	stdout.printf("========== Week days ==========\n");
+
+	var start = tstart;
+	var stop = start.add_minutes(-start.get_minute());
+	stop = stop.add_hours(-stop.get_hour());
+	while(stop.compare(tstop)< 0)
+	{
+		start = stop;
+		int d = start.get_day_of_week();
+		stop  = start.add_days(1);
+
+		week[d-1] += es.get_average_energy(start, stop);
+		num_week[d-1]++;
+
+	}
+
+	double total = 0;
+	stdout.printf("Day:    Average:    Total:\n");
+	for(uint i = 0; i < 7; i++)
+	{
+		if(num_week[i] > 0){
+			total+= 24/1000.0*week[i]/(double)num_week[i];
+			stdout.printf("%2u    %8.02f W  %8.02f kWh\n", i+1,
+					week[i]/(double)num_week[i],
+					24/1000.0*week[i]/(double)num_week[i]);
+		}
+	}
+	stdout.printf("===============================\n");
+	stdout.printf("Total:            %8.02f kWh\n", total);
+}
+
 void statistics(EnergyStorage es, string[] argv, uint offset)
 {
 	bool do_day  = false;
@@ -67,7 +136,7 @@ void statistics(EnergyStorage es, string[] argv, uint offset)
 	for(uint i = offset; i < argv.length; i++)
 	{
 		if(argv[i] == "range") {
-			i += parse_range(argv, i+1, out tstart, out tstop);
+			i += parse_range(argv, i+1, ref tstart, ref tstop);
 		}
 		else if (argv[i] == "day") {
 			do_day = true;
@@ -81,70 +150,21 @@ void statistics(EnergyStorage es, string[] argv, uint offset)
 
 	double avg = es.get_average_energy(tstart, tstop);
 	double eng = es.get_energy(tstart, tstop);
-	stdout.printf("Range:           %s --> %s\n", tstart.format("%d/%m/%Y - %H:%M"),tstop.format("%d/%m/%Y - %H:%M"));
-	stdout.printf("Average power:   %8.02f W\n", avg);
-	stdout.printf("Energy consumed: %8.02f kWh\n", eng/1000.0);
+	stdout.printf("Range:            %s --> %s\n", tstart.format("%d/%m/%Y - %H:%M"),tstop.format("%d/%m/%Y - %H:%M"));
+	stdout.printf("Average power:    %8.02f W\n", avg);
+	stdout.printf("Energy consumed:  %8.02f kWh\n", eng/1000.0);
 
 
 	// Day statistics.
 	if(do_day)
 	{
-		double hour[24] = {0};
-		int num_hour[24] = {0};
-		
-
-		stdout.printf("======= Day hours =======\n");
-
-		var start = tstart;
-		var stop = start.add_minutes(-start.get_minute());
-		while(stop.compare(tstop)< 0)
-		{
-			start = stop;
-			int d = start.get_hour();
-			stop  = start.add_hours(1);
-
-			hour[d] += es.get_average_energy(start, stop);
-			num_hour[d]++;
-
-		}
-
-		for(uint i = 0; i < 24; i++)
-		{
-			if(num_hour[i] > 0)
-				stdout.printf("%2u %8.02f\n", i, hour[i]/(double)num_hour[i]);
-
-		}
+		statistics_day(es, tstart, tstop);
 	}
 	
 	if(do_week)
 	{
-		double week[7] = {0};
-		int num_week[7] = {0};
-
-		stdout.printf("======= Week days =======\n");
-
-		var start = tstart;
-		var stop = start.add_minutes(-start.get_minute());
-		while(stop.compare(tstop)< 0)
-		{
-			start = stop;
-			int d = start.get_day_of_week();
-			stop  = start.add_days(1);
-
-			week[d-1] += es.get_average_energy(start, stop);
-			num_week[d-1]++;
-
-		}
-
-		for(uint i = 0; i < 7; i++)
-		{
-			if(num_week[i] > 0)
-				stdout.printf("%2u %8.02f\n", i+1, week[i]/(double)num_week[i]);
-
-		}
-
+		statistics_week(es, tstart, tstop);
 	}
-
 }
 
 /**
@@ -154,6 +174,7 @@ void plot_graph(EnergyStorage es, string[] argv, uint offset)
 {
 	bool do_average = false;
 	bool do_bars    = false;
+	bool do_points  = false;
 	DateTime tstart = es.get_starting_datetime();
 	DateTime tstop  = es.get_stopping_datetime();
 
@@ -168,10 +189,14 @@ void plot_graph(EnergyStorage es, string[] argv, uint offset)
 		{
 			do_bars = true;
 		}
+		else if (argv[i] == "points") 
+		{
+			do_points = true;
+		}
 		// Parse range.
 		else if(argv[i] == "range") 
 		{
-			i += parse_range(argv, i+1, out tstart, out tstop);
+			i += parse_range(argv, i+1, ref tstart, ref tstop);
 		}
 		else
 		{
@@ -179,6 +204,7 @@ void plot_graph(EnergyStorage es, string[] argv, uint offset)
 		}
 
 	}
+	if(!do_bars) do_points = true;
 	tstart = es.get_starting_datetime(tstart);
 	tstop = es.get_stopping_datetime(tstop);
 
@@ -194,7 +220,7 @@ void plot_graph(EnergyStorage es, string[] argv, uint offset)
 	win.set_default_size(800, 600);
 
 	double avg = es.get_average_energy(tstart, tstop);
-	double eng = es.get_energy(tstart, tstop);
+	//double eng = es.get_energy(tstart, tstop);
 
 	var a = new Graph.Widget();
 
@@ -221,7 +247,7 @@ void plot_graph(EnergyStorage es, string[] argv, uint offset)
 
 		var start = tstart;
 		var stop = start.add_minutes(-start.get_minute());
-		ds3.add_point((double)stop.to_unix(), avg);
+		ds3.add_point((double)stop.to_unix(), 0);
 
 		while(stop.compare(tstop)< 0)
 		{
@@ -234,10 +260,13 @@ void plot_graph(EnergyStorage es, string[] argv, uint offset)
 	}
 
 	// add zero point.
-	ds.add_point((double)tstart.to_unix(), 0);
-	foreach ( EnergyPoint ep in es.get_data(tstart, tstop))
+	if(do_points)
 	{
-		ds.add_point((double)ep.time.to_unix(), ep.power);
+		ds.add_point((double)tstart.to_unix(), 0);
+		foreach ( EnergyPoint ep in es.get_data(tstart, tstop))
+		{
+			ds.add_point((double)ep.time.to_unix(), ep.power);
+		}
 	}
 
 	var start = tstart;
@@ -308,6 +337,4 @@ int main (string[] argv)
 		stdout.printf("Usage: %s <command> <options>", argv[0]);	
 		return 1;
 	}
-
-	return 0;
 }

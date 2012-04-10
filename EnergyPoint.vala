@@ -42,6 +42,7 @@ class EnergyStorage
 
 
 		db.exec(create_db);
+		db.exec(create_index);
 
 		const string insert_db_str = """
 			INSERT OR IGNORE INTO data VALUES(?, ?);	
@@ -125,7 +126,7 @@ class EnergyStorage
 				ep.power = int.parse(el.get_string());
 				if(this.add_point(ep)) retv++;
 			}
-			dt = dt.add_seconds((double)60.0);
+			dt = dt.add_seconds((double)timeunits);
 		}
 		return retv;
 	}
