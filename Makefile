@@ -20,7 +20,7 @@ endif
 ##
 # VALA flags.
 ##
-VALA_FLAGS=$(foreach PKG, $(PKGS), --pkg=$(PKG)) -g
+VALA_FLAGS=$(foreach PKG, $(PKGS), --pkg=$(PKG)) -g --save-temps
 
 ##
 # Build program

@@ -4,7 +4,7 @@ using Sqlite;
 /**
  * Represent a point of energy.
  */
-class EnergyPoint
+struct EnergyPoint
 {
 	public DateTime time;
 	public int		power;
@@ -150,7 +150,7 @@ class EnergyStorage
 		{
 			string? a = el.get_string();
 			if(a != null && a.length > 0) { 
-				EnergyPoint ep = new EnergyPoint();
+				EnergyPoint ep = EnergyPoint();
 				ep.time = dt;
 				ep.power = int.parse(el.get_string());
 				if(this.add_point(ep)) retv++;
@@ -173,11 +173,11 @@ class EnergyStorage
 	/**
 	 * 
  	 */
-	public List<EnergyPoint> get_data(owned DateTime? start = null, owned DateTime? stop = null)
+	public List<EnergyPoint?> get_data(owned DateTime? start = null, owned DateTime? stop = null)
 	{
 		if(start == null) start = this.get_starting_datetime();
 		if(stop == null) stop = this.get_stopping_datetime();
-		List<EnergyPoint> eps = new List<EnergyPoint>();
+		List<EnergyPoint?> eps = new List<EnergyPoint?>();
 
 
 		get_data_stmt.reset();
@@ -195,7 +195,7 @@ class EnergyStorage
 				case Sqlite.DONE:
 					break;
 				case Sqlite.ROW:
-					EnergyPoint ep = new EnergyPoint();
+					EnergyPoint ep = EnergyPoint();
 					ep.time  = new GLib.DateTime.from_unix_local(get_data_stmt.column_int64(0));
 					ep.power = get_data_stmt.column_int(1);
 					eps.append(ep);
