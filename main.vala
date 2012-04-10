@@ -167,6 +167,81 @@ void statistics(EnergyStorage es, string[] argv, uint offset)
 	}
 }
 
+void plot_week(EnergyStorage es, string[] argv, uint offset)
+{
+	DateTime tstart = es.get_starting_datetime();
+	DateTime tstop  = es.get_stopping_datetime();
+
+	// Parse range.
+	for(uint i = offset; i < argv.length; i++)
+	{
+		if(argv[i] == "range") {
+			i += parse_range(argv, i+1, ref tstart, ref tstop);
+		}
+	}
+
+	double week[7] = {0};
+	int num_week[7] = {0};
+
+	var start = tstart;
+	var stop = start.add_minutes(-start.get_minute());
+	stop = stop.add_hours(-stop.get_hour());
+	while(stop.compare(tstop)< 0)
+	{
+		start = stop;
+		int d = start.get_day_of_week();
+		stop  = start.add_days(1);
+
+		week[d-1] += es.get_average_energy(start, stop);
+		num_week[d-1]++;
+
+	}
+
+	// Draw graph.
+	Gtk.init(ref argv);
+	Gtk.Window win = new Gtk.Window();
+
+	win.delete_event.connect((source) =>{
+		Gtk.main_quit();
+		return false;
+	});
+	// Set default size
+	win.set_default_size(800, 600);
+
+	var a = new Graph.Widget();
+
+	a.graph.title_label = "Power consumption";
+	a.graph.y_axis_label = "Energy (kWh)";
+	a.graph.x_axis_label = "Week day";
+
+	a.graph.min_y_point = 0;
+	var ds = a.graph.create_data_set_bar();
+	ds.set_color(0.4,0.5,0.3);
+
+	a.graph.add_xticks(0.5, "Monday");
+	a.graph.add_xticks(1.5, "Tuesday");
+	a.graph.add_xticks(2.5, "Wednesday");
+	a.graph.add_xticks(3.5, "Thursday");
+	a.graph.add_xticks(4.5, "Friday");
+	a.graph.add_xticks(5.5, "Saturday");
+	a.graph.add_xticks(6.5, "Sunday");
+	ds.add_point(0, 0);
+	for(uint i = 0; i < 7; i++)
+	{
+		if(num_week[i] > 0)
+		{
+		ds.add_point(i+1, 
+				24/1000.0*week[i]/(double)num_week[i]);
+		}else{
+			ds.add_point(i+1, 0);	
+		}
+	}
+	win.add(a);
+
+	win.show_all();
+	Gtk.main();
+}
+
 /**
  * Plotting graph
  */
@@ -309,6 +384,14 @@ int main (string[] argv)
 		else if (argv[1] == "graph")
 		{
 			plot_graph(es, argv, 2);
+
+		}
+		/**
+		 * Plot graphs
+		 */
+		else if (argv[1] == "weekgraph")
+		{
+			plot_week(es, argv, 2);
 
 		}
 
