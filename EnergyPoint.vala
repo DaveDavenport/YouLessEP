@@ -109,12 +109,13 @@ class EnergyStorage
 	 */
 	private bool add_point(EnergyPoint ep)
 	{
+		var lir = db.last_insert_rowid();
 		insert_ep.bind_int64(1, ep.time.to_unix());	
 		insert_ep.bind_int(2, ep.power);	
 
 		insert_ep.step();
 		insert_ep.reset();
-		if(db.last_insert_rowid() > 0) return true;
+		if(db.last_insert_rowid() != lir) return true;
 		return false;
 	}
 
