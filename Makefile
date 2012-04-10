@@ -17,10 +17,13 @@ ifeq ($(PKG_EXISTS),$(PKG_FALSE))
 $(error Not all dependencies are met)
 endif
 
+VALA_FLAGS=
+CSOURCES=
+-include Makefile.settings
 ##
 # VALA flags.
 ##
-VALA_FLAGS=$(foreach PKG, $(PKGS), --pkg=$(PKG)) -g --save-temps
+VALA_FLAGS+=$(foreach PKG, $(PKGS), --pkg=$(PKG)) -g 
 
 ##
 # Build program
@@ -31,5 +34,17 @@ $(PROGRAM): $(SOURCES) | Makefile
 ###
 # Clean up
 ###
-clean: $(PROGRAM)
-	@rm $^
+.PHONY: clean
+clean: $(PROGRAM) $(CSOURCES) 
+	rm -f $^ 
+
+enable-cfiles: 
+	$(info Enabling building of C files)
+	@rm -f $(PROGRAM) $(CSOURCES)
+	@echo "VALA_FLAGS:=--save-temps" > Makefile.settings
+	@echo "CSOURCES="$(SOURCES:%.vala=%.c)"" >> Makefile.settings
+
+disable-cfiles: 
+	$(info Disable building of C files)
+	@rm -f $(PROGRAM) $(CSOURCES)
+	@rm -f Makefile.settings
