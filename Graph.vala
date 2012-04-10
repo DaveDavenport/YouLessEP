@@ -427,7 +427,6 @@ namespace Graph
 		private double right_offset 	= 30.0;
 		private double top_offset		= 5.0;
 		private double bottom_offset	= 5.0;
-		private double y_step_size 		= 1.0;
 
 		public Graph()
 		{
