@@ -48,3 +48,14 @@ disable-cfiles:
 	$(info Disable building of C files)
 	@rm -f $(PROGRAM) $(CSOURCES)
 	@rm -f Makefile.settings
+
+DIST_NAME=$(PROGRAM)-$(shell date +%d%m%Y)
+DIST_FILE=$(DIST_NAME).tar.gz
+.PHONY: dist
+dist: $(DIST_FILE) 
+
+$(DIST_FILE): $(SOURCES) Makefile
+	mkdir $(DIST_NAME)
+	cp $^   $(DIST_NAME)
+	tar cvvzf $@ $(DIST_NAME)
+	rm -rf $(DIST_NAME)
