@@ -60,6 +60,8 @@ Example:
 				plot_type = PlotType.AVG_WEEKDAY;	
 			}else if (argv[i] == "points") {
 				plot_type = PlotType.POINTS;
+			}else if (argv[i] == "weeks") {
+				plot_type = PlotType.WEEKS;
 			}else if (argv[i] == "days") {
 				plot_type = PlotType.DAYS;
 			} else {
@@ -80,10 +82,53 @@ Example:
 		{
 			plot_weekday();
 		}
+		else if (plot_type ==  PlotType.WEEKS)
+		{
+			plot_weeks();
+		}
 
 		return 0;
 	}
+	private void plot_weeks()
+	{
+		var start = tstart;
+		var stop = start.add_minutes(-start.get_minute());
+		stop = stop.add_hours(-stop.get_hour());
+		stop = stop.add_days(-stop.get_day_of_week()+1);
 
+		Gtk.Window win = new Gtk.Window();
+
+		win.delete_event.connect((source) =>{
+				Gtk.main_quit();
+				return false;
+				});
+		// Set default size
+		win.set_default_size(800, 600);
+
+		var a = new Graph.Widget();
+
+		a.graph.title_label = "Power consumption";
+		a.graph.y_axis_label = "Energy (kWh)";
+		a.graph.x_axis_label = "Week";
+
+		var ds3 = a.graph.create_data_set_bar();
+		ds3.set_color(0.5,0.2,0.2);
+		ds3.add_point(stop.to_unix(), 0);
+		while(stop.compare(tstop)< 0)
+		{
+			start = stop;
+			stop  = start.add_days(7);
+
+			stdout.printf("Range:            %s --> %s\n", start.format("%V %d/%m/%Y - %H:%M"),stop.format("%d/%m/%Y - %H:%M"));
+			var avg = es.get_average_energy(start,stop)*24*7/1000.0;
+			stdout.printf("power: %.2f kWh\n", avg);
+			ds3.add_point((double)stop.to_unix(), avg);
+			a.graph.add_xticks((double)start.to_unix()+(3.5*24*60*60), start.format("%V"));
+		}
+		win.add(a);
+		win.show_all();
+		Gtk.main();
+	}
 	private void plot_weekday()
 	{
 		double week[7] = {0};

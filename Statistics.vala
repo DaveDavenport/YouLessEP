@@ -11,6 +11,7 @@ class Statistics : Module
 	private DateTime tstop;
 	private bool do_weekday = false;
 	private bool do_day = false;
+	private bool do_weeks = false;
 
 	// Constructor
 	public Statistics ( EnergyStorage es )
@@ -27,6 +28,7 @@ ep statistics <options> <commands>
 commands:
 	day:            Shows the average power consumption for each hour of the day.
 	weekday:        Shows the average power consumption for each day of the week.
+	weeks:          Shows the energy consumption for each week of the year.
 
 Options:
 	--help, help	print this help message.
@@ -53,6 +55,8 @@ Example:
 				do_weekday = true;
 			}else if (argv[i] == "day") {
 				do_day = true;
+			}else if (argv[i] == "weeks") {
+				do_weeks = true;
 			} else {
 				print_help();
 				return false;
@@ -75,9 +79,28 @@ Example:
 		if(do_weekday) {
 			statistics_weekday();
 		}
+		if(do_weeks) {
+			weeks();
+		}
 		return 0;
 	}
+	private void weeks()
+	{
+		var start = tstart;
+		var stop = start.add_minutes(-start.get_minute());
+		stop = stop.add_hours(-stop.get_hour());
+		stop = stop.add_days(-stop.get_day_of_week()+1);
+		stdout.printf("============  Week  ===========\n");
+		while(stop.compare(tstop)< 0)
+		{
+			start = stop;
+			stop  = start.add_days(7);
 
+			var avg = es.get_average_energy(start,stop)*24*7/1000.0;
+			stdout.printf("%2d                %8.02f kWh\n",start.get_week_of_year(),  avg);
+		}
+		stdout.printf("===============================\n");
+	}
 	// Show average over day. 
 	private void statistics_day()
 	{
@@ -137,12 +160,16 @@ Example:
 		stdout.printf("Day:    Average:    Total:\n");
 		for(uint i = 0; i < 7; i++)
 		{
+			stop = tstart.add_minutes(-start.get_minute());
+			stop = stop.add_hours(-stop.get_hour());
+			stop = stop.add_days(-stop.get_day_of_week()+1);
 			if(num_week[i] > 0){
 				total+= 24/1000.0*week[i]/(double)num_week[i];
 				stdout.printf("%2u    %8.02f W  %8.02f kWh\n", i+1,
 						week[i]/(double)num_week[i],
 						24/1000.0*week[i]/(double)num_week[i]);
 			}
+			stop  = start.add_days(1);
 		}
 		stdout.printf("===============================\n");
 		stdout.printf("Total:            %8.02f kWh\n", total);

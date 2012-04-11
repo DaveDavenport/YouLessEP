@@ -73,7 +73,7 @@ int main (string[] argv)
 		 */
 		else
 		{
-			stdout.printf("'%s' is an invalid command.", argv[1]);
+			stdout.printf("'%s' is an invalid module.", argv[1]);
 			return 1;
 		}
 
@@ -88,7 +88,9 @@ int main (string[] argv)
 	}
 	else
 	{
-		stdout.printf("Usage: %s <command> <options>", argv[0]);	
+		stdout.printf("Usage: %s <module> <options>\n\n", argv[0]);	
+		stdout.printf("The following modules are supported: import, plot, statistics.\n");
+		stdout.printf("Use ep <module> help for more help.\n");
 		return 1;
 	}
 }
