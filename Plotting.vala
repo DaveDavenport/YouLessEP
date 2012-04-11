@@ -29,8 +29,8 @@ class Plotting : Module
 	public override void print_help()
 	{
 		stdout.printf("""
-				Usage plotting:
-				ep plotting <options> <commands>
+				Usage plot:
+				ep plot <options> <commands>
 
 				commands:
 points:         Plot all the data points. (use in combination with range)
