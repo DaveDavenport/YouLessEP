@@ -3,7 +3,7 @@ using GLib;
 /*******************************************************************
  * Statistics 
  ******************************************************************/
-class Statistics : Base 
+class Statistics : Module
 {
 	private EnergyStorage es = null;
 	// 

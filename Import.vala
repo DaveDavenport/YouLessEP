@@ -3,7 +3,7 @@ using GLib;
 /**
  * This module takes care of importing files into the DB
  */
-class Import : Base 
+class Import : Module
 {
 	private EnergyStorage es = null;
 	private List<string> files;
