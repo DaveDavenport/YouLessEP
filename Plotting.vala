@@ -71,6 +71,7 @@ Example:
 	}
 	public override int execute()
 	{
+		stdout.printf("Range:            %s --> %s\n", tstart.format("%d/%m/%Y - %H:%M"),tstop.format("%d/%m/%Y - %H:%M"));
 		if(plot_type == PlotType.POINTS)
 		{
 			plot_graph();
