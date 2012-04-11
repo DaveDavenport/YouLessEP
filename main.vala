@@ -55,14 +55,9 @@ int main (string[] argv)
 		/**
 		 * Plot graphs
 		 */
-		else if (argv[1] == "graph")
+		else if (argv[1] == "plot")
 		{
-			if(argv.length > 1 && argv[2] == "weekday")
-			{
-				plot_weekday(es, argv, 2);
-			}else{
-				plot_graph(es, argv, 2);
-			}
+			module = new Plotting(es);
 		}
 
 		/**
