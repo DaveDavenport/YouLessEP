@@ -14,8 +14,9 @@ class Plotting : Module
 
 	private EnergyStorage es = null;
 
-	private bool do_svg = false;
-	private PlotType plot_type = PlotType.POINTS;
+	private bool do_svg 		= false;
+	private bool do_average 	= false;
+	private PlotType plot_type 	= PlotType.POINTS;
 	private DateTime tstart;
 	private DateTime tstop;
 
@@ -29,18 +30,20 @@ class Plotting : Module
 	public override void print_help()
 	{
 		stdout.printf("""
-				Usage plot:
-				ep plot <options> <commands>
+Usage plot:
+    ep plot <options> <commands>
 
 				commands:
 points:         Plot all the data points. (use in combination with range)
 weekday:        Shows the average power consumption for each day of the week.
 weeks:	        Shows the energy consumption for each week of the year.
+months:         Shows the energy consumption for each month of the year.
 
 Options:
 --help, help	print this help message.
-range <start date> <end date>	limit the evaluated data to a certain range.
-svg	                            outputs the graph to an SVG file.
+range <start date> <end date>   limit the evaluated data to a certain range.
+svg                             outputs the graph to an SVG file.
+average							plot an average line.
 
 Example:
 """);
@@ -63,10 +66,14 @@ Example:
 				plot_type = PlotType.POINTS;
 			}else if (argv[i] == "weeks") {
 				plot_type = PlotType.WEEKS;
+			}else if (argv[i] == "months") {
+				plot_type = PlotType.MONTHS;
 			}else if (argv[i] == "days") {
 				plot_type = PlotType.DAYS;
 			}else if (argv[i] == "svg") {
 				do_svg = true;	
+			}else if (argv[i] == "average") {
+				do_average = true;	
 			} else {
 				print_help();
 				return false;
@@ -105,6 +112,10 @@ Example:
 		{
 			plot_weeks(graph);
 		}
+		else if (plot_type ==  PlotType.MONTHS)
+		{
+			plot_months(graph);
+		}
 
 		if(!do_svg)
 		{
@@ -136,8 +147,8 @@ Example:
 		graph.x_axis_label = "Week";
 
 		var ds3 = graph.create_data_set_bar();
+		ds3.min_y_point = 0;
 		ds3.set_color(0.5,0.2,0.2);
-		ds3.add_point(stop.to_unix(), 0);
 		while(stop.compare(tstop)< 0)
 		{
 			start = stop;
@@ -145,9 +156,58 @@ Example:
 
 			stdout.printf("Range:            %s --> %s\n", start.format("%V %d/%m/%Y - %H:%M"),stop.format("%d/%m/%Y - %H:%M"));
 			var avg = es.get_average_energy(start,stop)*24*7/1000.0;
+
 			stdout.printf("power: %.2f kWh\n", avg);
-			ds3.add_point((double)stop.to_unix(), avg);
+			ds3.add_point((double)stop.to_unix()-3.5*24*60*60, avg);
 			graph.add_xticks((double)start.to_unix()+(3.5*24*60*60), start.format("%V"));
+		}
+
+		// if we need average.
+		if(do_average)
+		{
+			var ds2 = new Graph.DataSetAverage(ds3);
+			graph.add_data_set(ds2);
+			ds2.set_color(0.2,0.2,0.4);
+		}
+	}
+	private void plot_months(Graph.Graph graph)
+	{
+		var start = tstart;
+		var stop = start.add_minutes(-start.get_minute());
+		stop = stop.add_hours(-stop.get_hour());
+		stop = stop.add_days(-stop.get_day_of_month()+1);
+
+		graph.title_label = "Power consumption";
+		graph.y_axis_label = "Energy (kWh)";
+		graph.x_axis_label = "Month";
+
+		var ds3 = graph.create_data_set_bar();
+		ds3.set_color(0.5,0.2,0.2);
+		// Graph 0 point  to 0
+		ds3.min_y_point = 0;
+
+		graph.add_xticks((double)stop.to_unix(),""); 
+		while(stop.compare(tstop)< 0)
+		{
+			start = stop;
+			stop  = start.add_months(1);
+
+			var num_days = stop.add_seconds(-1).get_day_of_month();
+
+			stdout.printf("Range:%u            %s --> %s\n",num_days, start.format("%B %d/%m/%Y - %H:%M"),stop.format("%d/%m/%Y - %H:%M"));
+			var avg = es.get_average_energy(start,stop)*num_days*24/1000.0;
+
+			stdout.printf("power: %.2f kWh\n", avg);
+			ds3.add_point((double)start.to_unix()+(num_days*0.5*24*60*60), avg);
+			graph.add_xticks((double)start.to_unix()+(num_days*0.5*24*60*60), start.format("%B"));
+		}
+		graph.add_xticks((double)stop.to_unix(),""); 
+		// if we need average.
+		if(do_average)
+		{
+			var ds2 = new Graph.DataSetAverage(ds3);
+			graph.add_data_set(ds2);
+			ds2.set_color(0.2,0.2,0.4);
 		}
 	}
 	private void plot_weekday(Graph.Graph graph)
@@ -177,7 +237,8 @@ Example:
 		graph.min_y_point = 0;
 		var ds = graph.create_data_set_bar();
 		ds.set_color(0.4,0.5,0.3);
-
+		ds.min_y_point = 0;
+		graph.add_xticks(0.0, "");
 		graph.add_xticks(0.5, "Monday");
 		graph.add_xticks(1.5, "Tuesday");
 		graph.add_xticks(2.5, "Wednesday");
@@ -185,16 +246,25 @@ Example:
 		graph.add_xticks(4.5, "Friday");
 		graph.add_xticks(5.5, "Saturday");
 		graph.add_xticks(6.5, "Sunday");
-		ds.add_point(0, 0);
+		graph.add_xticks(7.0, "");
+//		ds.add_point(0, 0);
 		for(uint i = 0; i < 7; i++)
 		{
 			if(num_week[i] > 0)
 			{
-				ds.add_point(i+1, 
+				stdout.printf("%u %f %i\n",i, 24/1000.0*week[i]/(double)num_week[i], num_week[i]);
+				ds.add_point(i+0.5, 
 						24/1000.0*week[i]/(double)num_week[i]);
 			}else{
-				ds.add_point(i+1, 0);	
+				ds.add_point(i+0.5, 0);	
 			}
+		}
+		// if we need average.
+		if(do_average)
+		{
+			var ds2 = new Graph.DataSetAverage(ds);
+			graph.add_data_set(ds2);
+			ds2.set_color(0.2,0.2,0.4);
 		}
 	}
 
@@ -203,11 +273,10 @@ Example:
 	 */
 	void plot_graph(Graph.Graph graph)
 	{
-		bool do_average = false;
-		bool do_bars    = false;
-		bool do_points  = false;
+//		bool do_bars    = false;
+		bool do_points  = true;
 
-		if(!do_bars) do_points = true;
+//		if(!do_bars) do_points = true;
 		tstart = es.get_starting_datetime(tstart);
 		tstop = es.get_stopping_datetime(tstop);
 
@@ -222,14 +291,7 @@ Example:
 		graph.min_y_point = 0;
 		var ds = graph.create_data_set_area();
 		ds.set_color(0.4,0.5,0.3);
-
-		// if we need average.
-		if(do_average)
-		{
-			var ds2 = new Graph.DataSetAverage(ds);
-			graph.add_data_set(ds2);
-			ds2.set_color(0.2,0.2,0.4);
-		}
+/*
 		if (do_bars)
 		{
 			var ds3 = graph.create_data_set_bar();
@@ -249,7 +311,7 @@ Example:
 				ds3.add_point((double)stop.to_unix(), avg);
 			}
 		}
-
+*/
 		// add zero point.
 		if(do_points)
 		{
@@ -258,6 +320,14 @@ Example:
 			{
 				ds.add_point((double)ep.time.to_unix(), ep.power);
 			}
+		}
+		// if we need average.
+		if(do_average)
+		{
+			var ds2 = new Graph.DataSetAverage(ds);
+			graph.add_data_set(ds2);
+			ds2.set_color(0.2,0.2,0.4);
+			ds2.average = avg;
 		}
 
 		var start = tstart;

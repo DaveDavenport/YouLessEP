@@ -12,13 +12,26 @@ namespace Graph
 	}
 	/**
 	 * Draw an average line based on the points of another dataset.
+	 * It can automatically draw average if and only if points are equally spaced.. 
+	 * If not, set it manually.
 	 */
 	public class DataSetAverage : DataSet
 	{
 		private DataSet ds;
-		private double average = 0;
-		private double x_first = 0;
-		private double x_last = 0;
+		private bool average_set = false;
+		private double _average = 0;
+		public double average {
+				get {
+					return _average;
+				}
+				set{
+					average_set = true;
+					_average = value;
+					min_y_point = value;
+					max_y_point = value;
+					this.changed();
+				}
+		}
 		public override void draw(Cairo.Context ctx, double height, double width,
 				double min_x, double max_x,
 				double min_y, double max_y)
@@ -32,38 +45,29 @@ namespace Graph
 
 			ctx.move_to(
 					width*(0)/(x_range),
-					height*(1-(average-min_y)/(y_range))
+					height*(1-(_average-min_y)/(y_range))
 					);
 			ctx.line_to(
 					width*(max_x-min_x)/(x_range),
-					height*(1-(average-min_y)/(y_range))
+					height*(1-(_average-min_y)/(y_range))
 					);
 			ctx.stroke();
 		}
-
+		// stupid and fix this.
+		// only works for equal intervals.
 		private void update_dataset_average(DataSet source)
 		{
+			if(average_set) return;
 			double total = 0;
-			double first = 0;
-			double last = 0;
-			Point? pp = null; 
-			average = 0;
-			x_first = x_last = 0;
+			uint num_points = 0;
+			_average = 0;
 			foreach(Point p in source.points)
 			{
-				if(pp == null) {
-					first = p.x;
-					pp = p;
-				}else {
-					total+=pp.y*(p.x-pp.x);
-					last = p.x;
-					pp = p;
-				}
+				total+= p.y;
+				num_points++;
 			}
-			if(last-first > 0){
-				average = total/(last-first);
-				x_first = first;
-				x_last = last;
+			if(num_points > 0 ) {
+				_average = total/(double)num_points;
 			}
 			this.changed();
 		}
@@ -71,8 +75,9 @@ namespace Graph
 		{
 			this.ds = ds;
 			this.ds.changed.connect((source) => {
-				update_dataset_average(source);
-			});
+					update_dataset_average(source);
+					});
+			update_dataset_average(ds);
 		}
 
 	}
@@ -131,29 +136,39 @@ namespace Graph
 	 */
 	public class DataSetBar : DataSet 
 	{
-
 		public override void draw(Cairo.Context ctx, double height, double width,
 				double min_x, double max_x,
 				double min_y, double max_y)
 		{	
 			double x_range = max_x-min_x;
 			double y_range = max_y-min_y;
-
+			double bar_width = double.MAX;
 
 			Point prev = points.first().data;
 			foreach(Point p in points)
 			{
-				if(prev != p) 
+				if(prev != p)
 				{
-					ctx.move_to(width*(prev.x-min_x)/x_range,
+					double wd = ((p.x-prev.x)/2-1)*2;
+					bar_width = double.min(wd, bar_width);
+				}
+			}
+			bar_width = double.min(bar_width, x_range-1);
+			stdout.printf("Bar width: %f\n", bar_width);
+			prev = points.first().data;
+			foreach(Point p in points)
+			{
+				//if(prev != p) 
+				{
+					ctx.move_to(width*(p.x-bar_width/2-min_x)/x_range,
 							height*(1-(0-min_y)/(y_range)));
-					ctx.line_to(width*(prev.x-min_x)/x_range,
+					ctx.line_to(width*(p.x-bar_width/2-min_x)/x_range,
 							height*(1-(p.y-min_y)/(y_range)));
 
-					ctx.line_to(width*(p.x-min_x)/x_range,
+					ctx.line_to(width*(p.x+bar_width/2-min_x)/x_range,
 							height*(1-(p.y-min_y)/(y_range)));
 
-					ctx.line_to(width*(p.x-min_x)/x_range,
+					ctx.line_to(width*(p.x+bar_width/2-min_x)/x_range,
 							height*(1-(0-min_y)/(y_range)));
 
 					ctx.close_path();
