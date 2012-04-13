@@ -45,20 +45,21 @@ ep plot <options> <commands>
 				commands:
 points:         Plot all the data points. (use in combination with range)
 dayhours:       Shows the average power consumption for each hour of the day.
-weekday:        Shows the average power consumption for each day of the week.
+weekdays:        Shows the average power consumption for each day of the week.
 weeks:	        Shows the energy consumption for each week of the year.
 days:	        Shows the energy consumption for each day of the year.
 months:         Shows the energy consumption for each month of the year.
 
 Options:
---help, help	print this help message.
-range <start date> <end date>   Limit the evaluated data to a certain range.
-svg <filename>                  Outputs the graph to an SVG file.
-average                         Plot an average line.
-width <width in px>             The width of the output.
-height <height in px>           The height of the output.
+    --help, help	                print this help message.
+    range <start date> <end date>   Limit the evaluated data to a certain range.
+    svg <filename>                  Outputs the graph to an SVG file.
+    average                         Plot an average line.
+    width <width in px>             The width of the output.
+    height <height in px>           The height of the output.
 
 Example:
+	ep plot days range 4/9/2012 4/16/2012 average output days.svg width 1024 height 600
 """);
 	}
 
@@ -73,7 +74,7 @@ Example:
 				return false;
 			} else if (argv[i] == "range") {
 				i += parse_range(argv, i+1, ref tstart, ref tstop);
-			} else if (argv[i] == "weekday") {
+			} else if (argv[i] == "weekdays") {
 				plot_type = PlotType.AVG_WEEKDAY;	
 			}else if (argv[i] == "points") {
 				plot_type = PlotType.POINTS;
@@ -152,7 +153,7 @@ Example:
 		}
 		else if (plot_type ==  PlotType.AVG_WEEKDAY)
 		{
-			plot_weekday(graph);
+			plot_weekdays(graph);
 		}
 		else if (plot_type ==  PlotType.WEEKS)
 		{
@@ -303,7 +304,7 @@ Example:
 			ds2.set_color(0.2,0.2,0.4);
 		}
 	}
-	private void plot_weekday(Graph.Graph graph)
+	private void plot_weekdays(Graph.Graph graph)
 	{
 		double week[7] = {0};
 		int num_week[7] = {0};

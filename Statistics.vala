@@ -9,7 +9,7 @@ class Statistics : Module
 	// 
 	private DateTime tstart;
 	private DateTime tstop;
-	private bool do_weekday = false;
+	private bool do_weekdays = false;
 	private bool do_day = false;
 	private bool do_weeks = false;
 	private bool do_months = false;
@@ -28,7 +28,7 @@ ep statistics <options> <commands>
 
 commands:
 	day:            Shows the average power consumption for each hour of the day.
-	weekday:        Shows the average power consumption for each day of the week.
+	weekdays:        Shows the average power consumption for each day of the week.
 	weeks:          Shows the energy consumption for each week of the year.
 	months:         Shows the energy consumption for each month of the year.
 
@@ -53,8 +53,8 @@ Example:
 				return false;
 			} else if (argv[i] == "range") {
 				i += parse_range(argv, i+1, ref tstart, ref tstop);
-			} else if (argv[i] == "weekday") {
-				do_weekday = true;
+			} else if (argv[i] == "weekdays") {
+				do_weekdays = true;
 			}else if (argv[i] == "day") {
 				do_day = true;
 			}else if (argv[i] == "weeks") {
@@ -80,8 +80,8 @@ Example:
 		if(do_day) {
 			statistics_day();
 		}
-		if(do_weekday) {
-			statistics_weekday();
+		if(do_weekdays) {
+			statistics_weekdays();
 		}
 		if(do_weeks) {
 			weeks();
@@ -161,7 +161,7 @@ Example:
 	}
 
 	/* show average in a week (per day) */
-	void statistics_weekday()
+	void statistics_weekdays()
 	{
 		double week[7] = {0};
 		int num_week[7] = {0};
