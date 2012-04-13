@@ -40,7 +40,11 @@ uint parse_range(string[] argv, uint offset, ref DateTime start, ref DateTime st
 /* input */
 int main (string[] argv)
 {
-	EnergyStorage es = new EnergyStorage("es.sqlite3");
+	/* Get user data dir */
+	var udd = GLib.Environment.get_user_data_dir();
+	var path = GLib.Path.build_filename(udd, "es.sqlite3");
+	EnergyStorage es = new EnergyStorage(path);
+
 	if(argv.length > 1)
 	{
 		Module module = null;
