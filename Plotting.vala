@@ -6,6 +6,7 @@ class Plotting : Module
 	private enum PlotType {
 		POINTS,
 			AVG_WEEKDAY,
+			AVG_HOURS,
 			DAYS,
 			WEEKS,
 			MONTHS,
@@ -14,9 +15,14 @@ class Plotting : Module
 
 	private EnergyStorage es = null;
 
-	private bool do_svg 		= false;
-	private bool do_average 	= false;
-	private PlotType plot_type 	= PlotType.POINTS;
+	// config options.
+	private bool do_svg 		   = false;
+	private string output_filename = "output.svg";
+	private uint output_width      = 800;
+	private uint output_height     = 600;
+	private bool do_average 	   = false;
+	private PlotType plot_type 	   = PlotType.POINTS;
+
 	private DateTime tstart;
 	private DateTime tstop;
 
@@ -35,15 +41,19 @@ Usage plot:
 
 				commands:
 points:         Plot all the data points. (use in combination with range)
+dayhours:       Shows the average power consumption for each hour of the day.
 weekday:        Shows the average power consumption for each day of the week.
 weeks:	        Shows the energy consumption for each week of the year.
+days:	        Shows the energy consumption for each day of the year.
 months:         Shows the energy consumption for each month of the year.
 
 Options:
 --help, help	print this help message.
-range <start date> <end date>   limit the evaluated data to a certain range.
-svg                             outputs the graph to an SVG file.
-average							plot an average line.
+range <start date> <end date>   Limit the evaluated data to a certain range.
+svg <filename>                  Outputs the graph to an SVG file.
+average                         Plot an average line.
+width <width in px>             The width of the output.
+height <height in px>           The height of the output.
 
 Example:
 """);
@@ -70,8 +80,41 @@ Example:
 				plot_type = PlotType.MONTHS;
 			}else if (argv[i] == "days") {
 				plot_type = PlotType.DAYS;
+			}else if (argv[i] == "dayhours") {
+				plot_type = PlotType.AVG_HOURS;
 			}else if (argv[i] == "svg") {
 				do_svg = true;	
+				i++;
+				if(i >= argv.length)
+				{
+					stdout.printf("Expected filename after svg.\n");
+					return false;
+				}
+				output_filename = argv[i];	
+			}else if (argv[i] == "width") {
+				i++;
+				if(i >= argv.length)
+				{
+					stdout.printf("Expected size after width.\n");
+					return false;
+				}
+				output_width = (uint)uint64.parse(argv[i]);
+				if(output_width < 100) {
+					stdout.printf("The output should be atleast 100px width.\n");
+					return false;
+				}
+			}else if (argv[i] == "height") {
+				i++;
+				if(i >= argv.length)
+				{
+					stdout.printf("Expected size after height.\n");
+					return false;
+				}
+				output_height = (uint)uint64.parse(argv[i]);
+				if(output_height < 100) {
+					stdout.printf("The output should be atleast 100px heigh.\n");
+					return false;
+				}
 			}else if (argv[i] == "average") {
 				do_average = true;	
 			} else {
@@ -116,6 +159,14 @@ Example:
 		{
 			plot_months(graph);
 		}
+		else if (plot_type ==  PlotType.DAYS)
+		{
+			plot_days(graph);
+		}
+		else if (plot_type ==  PlotType.AVG_HOURS)
+		{
+			plot_dayhours(graph);
+		}
 
 		if(!do_svg)
 		{
@@ -126,12 +177,12 @@ Example:
 					return false;
 					});
 			// Set default size
-			win.set_default_size(800, 600);
+			win.set_default_size((int)output_width, (int)output_height);
 			win.add(widget);
 			win.show_all();
 			Gtk.main();
 		}else{
-			svg_plot.output("output.svg", 800, 600);
+			svg_plot.output(output_filename, output_width, output_height);
 		}
 		return 0;
 	}
@@ -162,6 +213,45 @@ Example:
 			graph.add_xticks((double)start.to_unix()+(3.5*24*60*60), start.format("%V"));
 		}
 
+		// if we need average.
+		if(do_average)
+		{
+			var ds2 = new Graph.DataSetAverage(ds3);
+			graph.add_data_set(ds2);
+			ds2.set_color(0.2,0.2,0.4);
+		}
+	}
+	private void plot_days(Graph.Graph graph)
+	{
+		var start = tstart;
+		var stop = start.add_minutes(-start.get_minute());
+		stop = stop.add_hours(-stop.get_hour());
+
+		graph.title_label = "Power consumption";
+		graph.y_axis_label = "Energy (kWh)";
+		graph.x_axis_label = "Day";
+
+		var ds3 = graph.create_data_set_bar();
+		ds3.set_color(0.2,0.5,0.2);
+		// Graph 0 point  to 0
+		ds3.min_y_point = 0;
+
+		graph.add_xticks((double)stop.to_unix(),""); 
+		while(stop.compare(tstop)< 0)
+		{
+			start = stop;
+			stop  = start.add_days(1);
+
+			var day = stop.get_day_of_year();
+
+			stdout.printf("Range:%u            %s --> %s\n",day, start.format("%B %d/%m/%Y - %H:%M"),stop.format("%d/%m/%Y - %H:%M"));
+			var avg = es.get_average_energy(start,stop)*24/1000.0;
+
+			stdout.printf("power: %.2f kWh\n", avg);
+			ds3.add_point((double)start.to_unix()+(0.5*24*60*60), avg);
+			graph.add_xticks((double)start.to_unix()+(0.5*24*60*60), "%03d".printf(day));
+		}
+		graph.add_xticks((double)stop.to_unix(),""); 
 		// if we need average.
 		if(do_average)
 		{
@@ -255,6 +345,60 @@ Example:
 				stdout.printf("%u %f %i\n",i, 24/1000.0*week[i]/(double)num_week[i], num_week[i]);
 				ds.add_point(i+0.5, 
 						24/1000.0*week[i]/(double)num_week[i]);
+			}else{
+				ds.add_point(i+0.5, 0);	
+			}
+		}
+		// if we need average.
+		if(do_average)
+		{
+			var ds2 = new Graph.DataSetAverage(ds);
+			graph.add_data_set(ds2);
+			ds2.set_color(0.2,0.2,0.4);
+		}
+	}
+	private void plot_dayhours(Graph.Graph graph)
+	{
+		double hour[24] = {0};
+		int num_hour[24] = {0};
+
+		var start = tstart;
+		var stop = start.add_minutes(-start.get_minute());
+		while(stop.compare(tstop)< 0)
+		{
+			start = stop;
+			int d = start.get_hour();
+			stop  = start.add_hours(1);
+
+			hour[d] += es.get_average_energy(start, stop);
+			num_hour[d]++;
+
+		}
+
+
+		graph.title_label = "Power consumption";
+		graph.y_axis_label = "Energy (kWh)";
+		graph.x_axis_label = "Hour";
+
+		graph.min_y_point = 0;
+		var ds = graph.create_data_set_bar();
+		ds.set_color(0.4,0.5,0.3);
+		ds.min_y_point = 0;
+		// Add X-grid points. 
+		graph.add_xticks(0.0, "");
+		for(uint i = 0 ; i < 24; i++)
+		{
+			graph.add_xticks(0.5+i, "%2u".printf(i));
+		}
+		graph.add_xticks(24.0, "");
+
+		for(uint i = 0; i < 24; i++)
+		{
+			if(num_hour[i] > 0)
+			{
+				stdout.printf("%u %f %i\n",i, 24/1000.0*hour[i]/(double)num_hour[i], num_hour[i]);
+				ds.add_point(i+0.5, 
+						1/1000.0*hour[i]/(double)num_hour[i]);
 			}else{
 				ds.add_point(i+0.5, 0);	
 			}
