@@ -4,16 +4,17 @@ using Gtk;
 class Plotting : Module
 {
 	private enum PlotType {
-		POINTS,
-			AVG_WEEKDAY,
-			AVG_HOURS,
-			DAYS,
-			WEEKS,
-			MONTHS,
-			NUM_PLOT_TYPES	
+		POINTS, 		// Draw all the data points. (1 per minute).
+		AVG_WEEKDAY,	// Draw the average usage per day in a week.
+		AVG_HOURS,		// Draw the average usage per hour in a day.
+		DAYS,			// Plot energy consumed per measured day.
+		WEEKS,			// Plot energy consumed per measured week.
+		MONTHS,			// Plot energy consumed per measured month.
+		NUM_PLOT_TYPES	
 	}
 
-	private EnergyStorage es = null;
+	// Backend pointer.
+	private EnergyStorage es       = null;
 
 	// config options.
 	private bool do_svg 		   = false;
@@ -23,21 +24,23 @@ class Plotting : Module
 	private bool do_average 	   = false;
 	private PlotType plot_type 	   = PlotType.POINTS;
 
+	// Start stop
 	private DateTime tstart;
 	private DateTime tstop;
 
-
+	// Constructor
 	public Plotting(EnergyStorage es)
 	{
 		this.es = es;
-
 	}
 
+	// Help function.
 	public override void print_help()
 	{
-		stdout.printf("""
+		stdout.printf(
+"""
 Usage plot:
-    ep plot <options> <commands>
+ep plot <options> <commands>
 
 				commands:
 points:         Plot all the data points. (use in combination with range)
@@ -337,7 +340,7 @@ Example:
 		graph.add_xticks(5.5, "Saturday");
 		graph.add_xticks(6.5, "Sunday");
 		graph.add_xticks(7.0, "");
-//		ds.add_point(0, 0);
+		//		ds.add_point(0, 0);
 		for(uint i = 0; i < 7; i++)
 		{
 			if(num_week[i] > 0)
@@ -417,10 +420,10 @@ Example:
 	 */
 	void plot_graph(Graph.Graph graph)
 	{
-//		bool do_bars    = false;
+		//		bool do_bars    = false;
 		bool do_points  = true;
 
-//		if(!do_bars) do_points = true;
+		//		if(!do_bars) do_points = true;
 		tstart = es.get_starting_datetime(tstart);
 		tstop = es.get_stopping_datetime(tstop);
 
@@ -435,27 +438,27 @@ Example:
 		graph.min_y_point = 0;
 		var ds = graph.create_data_set_area();
 		ds.set_color(0.4,0.5,0.3);
-/*
-		if (do_bars)
-		{
-			var ds3 = graph.create_data_set_bar();
-			ds3.set_color(0.5,0.2,0.2);
+		/*
+		   if (do_bars)
+		   {
+		   var ds3 = graph.create_data_set_bar();
+		   ds3.set_color(0.5,0.2,0.2);
 
 
-			var start = tstart;
-			var stop = start.add_minutes(-start.get_minute());
-			ds3.add_point((double)stop.to_unix(), 0);
+		   var start = tstart;
+		   var stop = start.add_minutes(-start.get_minute());
+		   ds3.add_point((double)stop.to_unix(), 0);
 
-			while(stop.compare(tstop)< 0)
-			{
-				start = stop;
-				stop  = start.add_hours(1);
+		   while(stop.compare(tstop)< 0)
+		   {
+		   start = stop;
+		   stop  = start.add_hours(1);
 
-				avg = es.get_energy(start,stop);
-				ds3.add_point((double)stop.to_unix(), avg);
-			}
-		}
-*/
+		   avg = es.get_energy(start,stop);
+		   ds3.add_point((double)stop.to_unix(), avg);
+		   }
+		   }
+		 */
 		// add zero point.
 		if(do_points)
 		{
