@@ -20,7 +20,7 @@ class Statistics : Module
 		this.es = es;
 	} 
 
-	public override void print_help()
+	public void print_help()
 	{
 		stdout.printf("""
 Usage statistics:

@@ -35,7 +35,7 @@ class Plotting : Module
 	}
 
 	// Help function.
-	public override void print_help()
+	public void print_help()
 	{
 		stdout.printf(
 """

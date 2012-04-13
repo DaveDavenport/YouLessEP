@@ -3,6 +3,7 @@ DEPENDENCIES=\
 	Makefile\
 	TODO
 PROGRAM=ep
+VERSION=0.0.1
 
 
 # install location.

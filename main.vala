@@ -4,7 +4,6 @@ using GLib;
 abstract class Module 
 {
 
-	public abstract void print_help();
 	public abstract bool parse_arguments(string[] argv);
 	public abstract int execute();
 }
@@ -72,6 +71,13 @@ int main (string[] argv)
 			module = new Statistics(es);
 		}
 
+		/**
+		 * Status
+		 */
+		else if (argv[1] == "status")
+		{
+			module = new Status(es);
+		}
 		/** 
 		 * Invalid commands.
 		 */
@@ -93,7 +99,7 @@ int main (string[] argv)
 	else
 	{
 		stdout.printf("Usage: %s <module> <options>\n\n", argv[0]);	
-		stdout.printf("The following modules are supported: import, plot, statistics.\n");
+		stdout.printf("The following modules are supported: import, plot, statistics, status.\n");
 		stdout.printf("Use ep <module> help for more help.\n");
 		return 1;
 	}

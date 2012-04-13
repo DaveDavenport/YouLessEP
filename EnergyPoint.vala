@@ -16,6 +16,8 @@ struct EnergyPoint
 class EnergyStorage
 {
 	private Database db;
+	public string? _filename = null;
+	public string? filename {get{return _filename;}}
 
 	// Prepared statements.
 	private Statement insert_ep;
@@ -30,6 +32,7 @@ class EnergyStorage
 	 */
 	public EnergyStorage(string db_filename)
 	{
+		_filename = db_filename;
 		Sqlite.Database.open(db_filename, out db);
 
 		// Create the DB
