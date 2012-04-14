@@ -246,7 +246,7 @@ Example:
 			start = stop;
 			stop  = start.add_days(1);
 
-			var day = stop.get_day_of_year();
+			var day = start.get_day_of_year();
 
 			stdout.printf("Range:%u            %s --> %s\n",day, start.format("%B %d/%m/%Y - %H:%M"),stop.format("%d/%m/%Y - %H:%M"));
 			var avg = es.get_average_energy(start,stop)*24/1000.0;

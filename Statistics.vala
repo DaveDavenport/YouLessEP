@@ -13,6 +13,7 @@ class Statistics : Module
 	private bool do_day = false;
 	private bool do_weeks = false;
 	private bool do_months = false;
+	private bool do_days = false;
 
 	// Constructor
 	public Statistics ( EnergyStorage es )
@@ -28,9 +29,10 @@ ep statistics <options> <commands>
 
 commands:
 	day:            Shows the average power consumption for each hour of the day.
-	weekdays:        Shows the average power consumption for each day of the week.
+	weekdays:       Shows the average power consumption for each day of the week.
 	weeks:          Shows the energy consumption for each week of the year.
 	months:         Shows the energy consumption for each month of the year.
+	days:           Shows the energy consumption for each days of the year.
 
 Options:
 	--help, help	print this help message.
@@ -61,6 +63,8 @@ Example:
 				do_weeks = true;
 			}else if (argv[i] == "months") {
 				do_months = true;
+			}else if (argv[i] == "days") {
+				do_days = true;
 			} else {
 				print_help();
 				return false;
@@ -89,7 +93,27 @@ Example:
 		if(do_months) {
 			months();
 		}
+		if(do_days) {
+			days();
+		}
 		return 0;
+	}
+	private void days()
+	{
+		var start = tstart;
+		var stop = start.add_minutes(-start.get_minute());
+		stop = stop.add_hours(-stop.get_hour());
+		stdout.printf("============ Days ===========\n");
+		while(stop.compare(tstop)< 0)
+		{
+			start = stop;
+			stop  = start.add_days(1);
+			var num_days = start.get_day_of_year();
+
+			var avg = es.get_average_energy(start,stop)*24/1000.0;
+			stdout.printf("%2d                %8.02f kWh\n",num_days,  avg);
+		}
+		stdout.printf("===============================\n");
 	}
 	private void months()
 	{
