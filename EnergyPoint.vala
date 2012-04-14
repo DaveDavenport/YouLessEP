@@ -202,14 +202,14 @@ class EnergyStorage
 					EnergyPoint ep = EnergyPoint();
 					ep.time  = new GLib.DateTime.from_unix_local(get_data_stmt.column_int64(0));
 					ep.power = get_data_stmt.column_int(1);
-					eps.append(ep);
+					eps.prepend(ep);
 					break;
 				default:
 					stdout.printf ("Error: %d, %s\n", rc, db.errmsg ());
 					break;
 			}
 		} while (rc == Sqlite.ROW);
-
+		eps.reverse();
 
 		return eps;
 	}
