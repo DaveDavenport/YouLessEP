@@ -1,5 +1,22 @@
 using GLib;
 using Gtk;
+class Filter
+{
+	private uint under = 0;
+	private uint upper = uint.MAX;
+
+	public Filter(uint under, uint upper)
+	{
+		this.under = under;
+		this.upper = upper;
+	}
+	public bool check(double power)
+	{
+		if(power > under && power < upper)
+			return true;
+		return false;
+	}
+}
 
 class Plotting : Module
 {
@@ -18,10 +35,12 @@ class Plotting : Module
 
 	// config options.
 	private bool do_svg 		   = false;
+	private bool do_remove_avg     = false;
 	private string output_filename = "output.svg";
 	private uint output_width      = 800;
 	private uint output_height     = 600;
 	private bool do_average 	   = false;
+	private Filter? filter         = null;
 	private PlotType plot_type 	   = PlotType.POINTS;
 
 	// Start stop
@@ -57,6 +76,8 @@ Options:
     average                         Plot an average line.
     width <width in px>             The width of the output.
     height <height in px>           The height of the output.
+    remove-avg:                     Tries to remove the 'base' usage and show just the 'spikes'. Only works for points plot.
+	filter low high					Only shows points that are between low and high. Only works with remove-avg.
 
 Example:
 	ep plot days range 4/9/2012 4/16/2012 average output days.svg width 1024 height 600
@@ -86,6 +107,8 @@ Example:
 				plot_type = PlotType.DAYS;
 			}else if (argv[i] == "dayhours") {
 				plot_type = PlotType.AVG_HOURS;
+			}else if (argv[i] == "remove-avg") {
+				do_remove_avg = true;	
 			}else if (argv[i] == "svg") {
 				do_svg = true;	
 				i++;
@@ -119,6 +142,14 @@ Example:
 					stdout.printf("The output should be atleast 100px heigh.\n");
 					return false;
 				}
+			}else if (argv[i] == "filter") {
+				i+=2;
+				if(i >= argv.length)
+				{
+					stdout.printf("Expected expected lower and upper bound.\n");
+					return false;
+				}
+				filter = new Filter((uint)uint64.parse(argv[i-1]), (uint)uint64.parse(argv[i]));
 			}else if (argv[i] == "average") {
 				do_average = true;	
 			} else {
@@ -463,10 +494,48 @@ Example:
 		// add zero point.
 		if(do_points)
 		{
+			var ds3 = graph.create_data_set();
+			(ds3 as Graph.DataSetLine).dots= false;
+			ds3.set_color(1.0,0.0,0.0);
+			if(do_remove_avg)
+			{
+				graph.add_data_set(ds3);
+			}
+			double avr = avg;
+			uint iter = 0;
+			double average[8] = {0};
+			average[0] = avg;
 			ds.add_point((double)tstart.to_unix(), 0);
+			
+			if(do_remove_avg)
+			{
+				ds3.add_point((double)tstart.to_unix(), avg);
+				for(int i = 0; i < 8; i++) {
+					average[i] = avg;
+				}
+			}
 			foreach ( EnergyPoint ep in es.get_data(tstart, tstop))
 			{
-				ds.add_point((double)ep.time.to_unix(), ep.power);
+				if(do_remove_avg)
+				{
+					if(ep.power < (1.5*avr)) {	
+						average[iter++%8] = ep.power;
+					}else average[iter++%8] = avr;
+					avr = 0;
+					for(int i = 0; i < 8; i++) {
+						avr+=average[i]/8.0;
+					}
+					double value = double.min(avr, ep.power);
+					ds3.add_point((double)ep.time.to_unix(), value); 
+					if(filter == null || filter.check(ep.power-value))
+					{
+						ds.add_point((double)ep.time.to_unix(), ep.power-value);
+					}
+					else
+						ds.add_point((double)ep.time.to_unix(), 0);
+				}else{
+					ds.add_point((double)ep.time.to_unix(), ep.power);
+				}
 			}
 		}
 		// if we need average.
