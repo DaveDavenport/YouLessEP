@@ -1,5 +1,24 @@
 using GLib;
 
+
+class Filter
+{
+	private uint under = 0;
+	private uint upper = uint.MAX;
+
+	public Filter(uint under, uint upper)
+	{
+		this.under = under;
+		this.upper = upper;
+	}
+	public bool check(double power)
+	{
+		if(power > under && power < upper)
+			return true;
+		return false;
+	}
+}
+
 /* Base module Class. */
 abstract class Module 
 {

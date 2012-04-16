@@ -14,6 +14,7 @@ class Statistics : Module
 	private bool do_weeks = false;
 	private bool do_months = false;
 	private bool do_days = false;
+	private Filter? filter = null;
 
 	// Constructor
 	public Statistics ( EnergyStorage es )
@@ -65,6 +66,14 @@ Example:
 				do_months = true;
 			}else if (argv[i] == "days") {
 				do_days = true;
+			}else if (argv[i] == "pattern") {
+				i+=2;
+				if(i >= argv.length)
+				{
+					stdout.printf("Expected lower and upper bound.\n");
+					return false;
+				}
+				filter = new Filter((uint)uint64.parse(argv[i-1]), (uint)uint64.parse(argv[i]));
 			} else {
 				print_help();
 				return false;
@@ -95,6 +104,9 @@ Example:
 		}
 		if(do_days) {
 			days();
+		}
+		if(filter != null) {
+			pattern(filter);
 		}
 		return 0;
 	}
@@ -182,6 +194,64 @@ Example:
 		}
 		stdout.printf("===============================\n");
 		stdout.printf("Total:            %8.02f kWh\n", total/1e3);
+	}
+
+
+	void pattern(Filter filter)
+	{
+		double avg = es.get_average_energy(tstart, tstop);
+		stdout.printf("========== Pattern ==========\n");
+
+		double avr = avg;
+		uint iter = 0;
+		double average[8] = {0};
+
+		for(int i = 0; i < 8; i++) {
+			average[i] = avg;
+		}
+		EnergyPoint? pp = null;
+		bool prev = false;
+		GLib.HashTable<int, int> g = new GLib.HashTable<int, int>(GLib.direct_hash, GLib.direct_equal);
+		foreach ( EnergyPoint ep in es.get_data(tstart, tstop))
+		{
+			if(ep.power < (1.5*avr)) {	
+				average[iter++%8] = ep.power;
+			}else average[iter++%8] = avr;
+			avr = 0;
+			for(int i = 0; i < 8; i++) {
+				avr+=average[i]/8.0;
+			}
+			double value = double.min(avr, ep.power);
+			if(filter.check(ep.power - value))
+			{
+				if(!prev)
+				{
+					if(pp != null)
+					{
+						var diff = (ep.time.to_unix() - pp.time.to_unix());
+						stdout.printf("%f\n", diff);
+						int items = g.lookup((int)diff);
+						{
+							g.insert((int)diff,items+1); 
+						}
+					}
+					pp = ep;
+					prev = true;
+				}
+			}
+			else {
+				prev = false;
+			}
+		}
+		var eps = g.get_keys();
+		eps.sort((a, b) => {
+			return b-a;
+		});
+		foreach(int key in eps) 
+		{
+			stdout.printf("%4i %4i\n", key, g.get(key));
+		}
+
 	}
 
 	/* show average in a week (per day) */

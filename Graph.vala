@@ -152,6 +152,7 @@ namespace Graph
 					double wd = ((p.x-prev.x)/2-1)*2;
 					bar_width = double.min(wd, bar_width);
 				}
+				prev = p;
 			}
 			bar_width = double.min(bar_width, x_range-1);
 			stdout.printf("Bar width: %f\n", bar_width);

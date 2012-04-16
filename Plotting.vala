@@ -1,22 +1,5 @@
 using GLib;
 using Gtk;
-class Filter
-{
-	private uint under = 0;
-	private uint upper = uint.MAX;
-
-	public Filter(uint under, uint upper)
-	{
-		this.under = under;
-		this.upper = upper;
-	}
-	public bool check(double power)
-	{
-		if(power > under && power < upper)
-			return true;
-		return false;
-	}
-}
 
 class Plotting : Module
 {
@@ -27,6 +10,7 @@ class Plotting : Module
 		DAYS,			// Plot energy consumed per measured day.
 		WEEKS,			// Plot energy consumed per measured week.
 		MONTHS,			// Plot energy consumed per measured month.
+		PATTERN,
 		NUM_PLOT_TYPES	
 	}
 
@@ -109,6 +93,8 @@ Example:
 				plot_type = PlotType.AVG_HOURS;
 			}else if (argv[i] == "remove-avg") {
 				do_remove_avg = true;	
+			}else if (argv[i] == "pattern") {
+				plot_type = PlotType.PATTERN;	
 			}else if (argv[i] == "svg") {
 				do_svg = true;	
 				i++;
@@ -146,7 +132,7 @@ Example:
 				i+=2;
 				if(i >= argv.length)
 				{
-					stdout.printf("Expected expected lower and upper bound.\n");
+					stdout.printf("Expected lower and upper bound.\n");
 					return false;
 				}
 				filter = new Filter((uint)uint64.parse(argv[i-1]), (uint)uint64.parse(argv[i]));
@@ -201,6 +187,10 @@ Example:
 		else if (plot_type ==  PlotType.AVG_HOURS)
 		{
 			plot_dayhours(graph);
+		}
+		else if (plot_type ==  PlotType.PATTERN)
+		{
+			pattern(graph, filter);
 		}
 
 		if(!do_svg)
@@ -558,5 +548,73 @@ Example:
 			graph.add_xticks((double)start.to_unix(),sa);
 
 		}
+	}
+	void pattern(Graph.Graph graph, Filter filter)
+	{
+		double avg = es.get_average_energy(tstart, tstop);
+		stdout.printf("========== Pattern ==========\n");
+
+		double avr = avg;
+		uint iter = 0;
+		double average[8] = {0};
+
+		for(int i = 0; i < 8; i++) {
+			average[i] = avg;
+		}
+		EnergyPoint? pp = null;
+		bool prev = false;
+		int max_val = 0;
+		GLib.HashTable<int, int> g = new GLib.HashTable<int, int>(GLib.direct_hash, GLib.direct_equal);
+		foreach ( EnergyPoint ep in es.get_data(tstart, tstop))
+		{
+			if(ep.power < (1.5*avr)) {	
+				average[iter++%8] = ep.power;
+			}else average[iter++%8] = avr;
+			avr = 0;
+			for(int i = 0; i < 8; i++) {
+				avr+=average[i]/8.0;
+			}
+			double value = double.min(avr, ep.power);
+			if(filter.check(ep.power - value))
+			{
+				if(!prev)
+				{
+					if(pp != null)
+					{
+						var diff = (ep.time.to_unix() - pp.time.to_unix());
+						diff = diff - diff%100;
+						stdout.printf("%f\n", diff);
+						int items = g.lookup((int)diff);
+						{
+							max_val = int.max(items+1, max_val);
+							g.insert((int)diff,items+1); 
+						}
+					}
+					pp = ep;
+					prev = true;
+				}
+			}
+			else {
+				prev = false;
+			}
+		}
+		var eps = g.get_keys();
+		eps.sort((a, b) => {
+			return a-b;
+		});
+		var ds = graph.create_data_set_bar();
+		ds.set_color(0.4,0.5,0.3);
+		ds.min_y_point = 0;
+		graph.add_data_set(ds);
+		ds.add_point(0, 0);
+		foreach(int key in eps) 
+		{
+			int value = g.get(key);
+			if(max_val/5 < value){  
+				stdout.printf("%i %i\n", key,value); 
+				ds.add_point((double)key, (double) value); 
+			}
+		}
+
 	}
 }
