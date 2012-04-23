@@ -222,7 +222,8 @@ Example:
 		graph.y_axis_label = "Energy (kWh)";
 		graph.x_axis_label = "Week";
 
-		var ds3 = graph.create_data_set_bar();
+		var ds3 = new Graph.DataSetBar<EnergyPoint?>();//graph.create_data_set_bar();
+		graph.add_data_set(ds3);
 		ds3.min_y_point = 0;
 		ds3.set_color(0.5,0.2,0.2);
 		while(stop.compare(tstop)< 0)
@@ -241,10 +242,18 @@ Example:
 		// if we need average.
 		if(do_average)
 		{
-			var ds2 = new Graph.DataSetAverage(ds3);
+			var ds2 = new Graph.DataSetAverage<EnergyPoint?>(ds3);
 			graph.add_data_set(ds2);
 			ds2.set_color(0.2,0.2,0.4);
 		}
+	}
+	private string day_format_plot(DateTime? t)
+	{
+		var start = t.add_minutes(-t.get_minute());
+		var stop  = start.add_days(1);
+		var avg = es.get_average_energy(start,stop)*24/1000.0;
+		string retv = "x: %s\ny: %.02f kWh".printf(t.format("%B (%d/%m/%Y)"), avg); 
+		return retv;
 	}
 	private void plot_days(Graph.Graph graph)
 	{
@@ -256,10 +265,15 @@ Example:
 		graph.y_axis_label = "Energy (kWh)";
 		graph.x_axis_label = "Day";
 
-		var ds3 = graph.create_data_set_bar();
+		var ds3 = new Graph.DataSetBar<DateTime>();//graph.create_data_set_bar();
+		graph.add_data_set(ds3);
 		ds3.set_color(0.2,0.5,0.2);
 		// Graph 0 point  to 0
 		ds3.min_y_point = 0;
+
+
+//		ds3.format_callback  = day_format_plot; 
+
 
 		graph.add_xticks((double)stop.to_unix(),""); 
 		while(stop.compare(tstop)< 0)
@@ -273,14 +287,14 @@ Example:
 			var avg = es.get_average_energy(start,stop)*24/1000.0;
 
 			stdout.printf("power: %.2f kWh\n", avg);
-			ds3.add_point((double)start.to_unix()+(0.5*24*60*60), avg);
+			ds3.add_point_value((double)start.to_unix()+(0.5*24*60*60), avg, start);
 			graph.add_xticks((double)start.to_unix()+(0.5*24*60*60), "%03d".printf(day));
 		}
 		graph.add_xticks((double)stop.to_unix(),""); 
 		// if we need average.
 		if(do_average)
 		{
-			var ds2 = new Graph.DataSetAverage(ds3);
+			var ds2 = new Graph.DataSetAverage<EnergyPoint?>(ds3);
 			graph.add_data_set(ds2);
 			ds2.set_color(0.2,0.2,0.4);
 		}
@@ -296,7 +310,8 @@ Example:
 		graph.y_axis_label = "Energy (kWh)";
 		graph.x_axis_label = "Month";
 
-		var ds3 = graph.create_data_set_bar();
+		var ds3 = new Graph.DataSetBar<EnergyPoint?>();//graph.create_data_set_bar();
+		graph.add_data_set(ds3);
 		ds3.set_color(0.5,0.2,0.2);
 		// Graph 0 point  to 0
 		ds3.min_y_point = 0;
@@ -320,7 +335,7 @@ Example:
 		// if we need average.
 		if(do_average)
 		{
-			var ds2 = new Graph.DataSetAverage(ds3);
+			var ds2 = new Graph.DataSetAverage<EnergyPoint?>(ds3);
 			graph.add_data_set(ds2);
 			ds2.set_color(0.2,0.2,0.4);
 		}
@@ -350,7 +365,8 @@ Example:
 		graph.x_axis_label = "Week day";
 
 		graph.min_y_point = 0;
-		var ds = graph.create_data_set_bar();
+		var ds = new Graph.DataSetBar<EnergyPoint?>();//graph.create_data_set_bar();
+		graph.add_data_set(ds);
 		ds.set_color(0.4,0.5,0.3);
 		ds.min_y_point = 0;
 		graph.add_xticks(0.0, "");
@@ -377,7 +393,7 @@ Example:
 		// if we need average.
 		if(do_average)
 		{
-			var ds2 = new Graph.DataSetAverage(ds);
+			var ds2 = new Graph.DataSetAverage<EnergyPoint?>(ds);
 			graph.add_data_set(ds2);
 			ds2.set_color(0.2,0.2,0.4);
 		}
@@ -406,7 +422,8 @@ Example:
 		graph.x_axis_label = "Hour";
 
 		graph.min_y_point = 0;
-		var ds = graph.create_data_set_bar();
+		var ds = new Graph.DataSetBar<EnergyPoint?>();//graph.create_data_set_bar();
+		graph.add_data_set(ds);
 		ds.set_color(0.4,0.5,0.3);
 		ds.min_y_point = 0;
 		// Add X-grid points. 
@@ -431,7 +448,7 @@ Example:
 		// if we need average.
 		if(do_average)
 		{
-			var ds2 = new Graph.DataSetAverage(ds);
+			var ds2 = new Graph.DataSetAverage<EnergyPoint?>(ds);
 			graph.add_data_set(ds2);
 			ds2.set_color(0.2,0.2,0.4);
 		}
@@ -458,7 +475,8 @@ Example:
 		graph.x_axis_label = "Time (HH:MM)";
 
 		graph.min_y_point = 0;
-		var ds = graph.create_data_set_area();
+		var ds = new Graph.DataSetArea<EnergyPoint?>();
+		graph.add_data_set(ds);
 		ds.set_color(0.4,0.5,0.3);
 		/*
 		   if (do_bars)
@@ -484,7 +502,8 @@ Example:
 		// add zero point.
 		if(do_points)
 		{
-			var ds3 = graph.create_data_set();
+			var ds3 = new Graph.DataSetLine<EnergyPoint?>();
+			graph.add_data_set(ds3);
 			(ds3 as Graph.DataSetLine).dots= false;
 			ds3.set_color(1.0,0.0,0.0);
 			if(do_remove_avg)
@@ -531,7 +550,7 @@ Example:
 		// if we need average.
 		if(do_average)
 		{
-			var ds2 = new Graph.DataSetAverage(ds);
+			var ds2 = new Graph.DataSetAverage<EnergyPoint?>(ds);
 			graph.add_data_set(ds2);
 			ds2.set_color(0.2,0.2,0.4);
 			ds2.average = avg;
@@ -582,7 +601,7 @@ Example:
 					if(pp != null)
 					{
 						var diff = (ep.time.to_unix() - pp.time.to_unix());
-						diff = diff - diff%100;
+						diff = diff - diff%300;
 						stdout.printf("%f\n", diff);
 						int items = g.lookup((int)diff);
 						{
@@ -602,7 +621,8 @@ Example:
 		eps.sort((a, b) => {
 			return a-b;
 		});
-		var ds = graph.create_data_set_bar();
+		var ds = new Graph.DataSetBar<EnergyPoint?>();//graph.create_data_set_bar();
+		graph.add_data_set(ds);
 		ds.set_color(0.4,0.5,0.3);
 		ds.min_y_point = 0;
 		graph.add_data_set(ds);
@@ -610,7 +630,7 @@ Example:
 		foreach(int key in eps) 
 		{
 			int value = g.get(key);
-			if(max_val/5 < value){  
+			if(key > 0 && max_val/5 < value){  
 				stdout.printf("%i %i\n", key,value); 
 				ds.add_point((double)key, (double) value); 
 			}

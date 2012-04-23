@@ -4,22 +4,25 @@ using Cairo;
 
 namespace Graph
 {
-	public struct Point 
+	public struct Point<G> 
 	{
 		string label;
 		double x;
 		double y;
+		G value;
 	}
 	/**
 	 * Draw an average line based on the points of another dataset.
 	 * It can automatically draw average if and only if points are equally spaced.. 
 	 * If not, set it manually.
 	 */
-	public class DataSetAverage : DataSet
+	public class DataSetAverage<G> : DataSet<G>
 	{
 		private DataSet ds;
 		private bool average_set = false;
 		private double _average = 0;
+
+
 		public double average {
 				get {
 					return _average;
@@ -84,7 +87,7 @@ namespace Graph
 	/**
 	 * This draws a line in the graph without dots.
 	 */
-	public class DataSetLine : DataSet
+	public class DataSetLine<G> : DataSet<G>
 	{
 		public bool dots { get; set; default=true;} 
 
@@ -134,16 +137,29 @@ namespace Graph
 	/**
 	 * This dataset plots bars 
 	 */
-	public class DataSetBar : DataSet 
+	public class DataSetBar<G> : DataSet<G>
 	{
-		public override void draw(Cairo.Context ctx, double height, double width,
-				double min_x, double max_x,
-				double min_y, double max_y)
-		{	
-			double x_range = max_x-min_x;
-			double y_range = max_y-min_y;
-			double bar_width = double.MAX;
-
+		public double bar_width = 20;
+		public DataSetBar()
+		{
+			this.changed.connect((source)=>{
+				update_bar_width();
+				stdout.printf("Bar width: %f\n", bar_width);
+				unowned List<Point?> l = points.last();
+				if(l != null) {
+					max_x_point = l.data.x+bar_width/2-1;
+					min_x_point = points.first().data.x-bar_width/2+1;
+				}
+			});
+		}
+		void update_bar_width()
+		{
+			bar_width = double.MAX;
+			if(points.first() == null) 
+			{
+				bar_width = 20;
+				return;
+			}
 			Point prev = points.first().data;
 			foreach(Point p in points)
 			{
@@ -154,9 +170,18 @@ namespace Graph
 				}
 				prev = p;
 			}
+			
+		}
+
+		public override void draw(Cairo.Context ctx, double height, double width,
+				double min_x, double max_x,
+				double min_y, double max_y)
+		{	
+			double x_range = max_x-min_x;
+			double y_range = max_y-min_y;
 			bar_width = double.min(bar_width, x_range-1);
 			stdout.printf("Bar width: %f\n", bar_width);
-			prev = points.first().data;
+			Point prev = points.first().data;
 			foreach(Point p in points)
 			{
 				//if(prev != p) 
@@ -181,11 +206,28 @@ namespace Graph
 				prev = p;
 			}
 		}
+		public override Point? match_point (double x, double y)
+		{
+			unowned List<Point?> point = points.first();
+			while(point != null)
+			{
+				Point a = point.data;
+				
+				if(Math.fabs(a.x - x) < (bar_width/2-1))
+				{
+					stdout.printf("value: %f %f\n", a.x, a.y);
+					return a;
+				}
+				point = point.next;
+			}	
+
+			return null;
+		}
 	}
 	/**
 	 * This dataset plots area beneath 
 	 */
-	public class DataSetArea : DataSet 
+	public class DataSetArea<G> : DataSet<G>
 	{
 
 		public override void draw(Cairo.Context ctx, double height, double width,
@@ -229,7 +271,7 @@ namespace Graph
 	/**
 	 * This dataset plots lines 
 	 */
-	public class DataSet 
+	public class DataSet<G> 
 	{
 		// todo make protected again.
 		public List<Point?> points = new List<Point?>();
@@ -243,6 +285,12 @@ namespace Graph
 		protected double b = 0.0;
 
 		public signal void changed();
+
+
+		public delegate string FormatTooltipCallback(G p);
+
+		public FormatTooltipCallback? format_callback =null;
+
 		public void recalculate()
 		{
 			stdout.printf("recalculate\n");
@@ -266,7 +314,7 @@ namespace Graph
 			this.b = b;
 			this.changed();
 		}
-		public void add_point ( double x, double y)
+		public void add_point(double x, double y)
 		{
 			if( x < min_x_point)	
 				min_x_point = x;
@@ -277,10 +325,28 @@ namespace Graph
 			if( y > max_y_point)	
 				max_y_point = y;
 
-			Point p = Point();
+			Point p = Point<G>();
 			p.x = x;
 			p.y = y;
 			points.append(p);
+			this.changed();
+		}
+		public void add_point_value ( double x, double y, G value)
+		{
+			if( x < min_x_point)	
+				min_x_point = x;
+			if( y < min_y_point)	
+				min_y_point = y;
+			if( x > max_x_point)	
+				max_x_point = x;
+			if( y > max_y_point)	
+				max_y_point = y;
+
+			Point p = Point<G>();
+			p.x = x;
+			p.y = y;
+			p.value = value;
+			points.append((owned)p);
 			this.changed();
 		}
 
@@ -293,6 +359,31 @@ namespace Graph
 		{	
 			GLib.error("Base class, do not use directly.");
 		}
+
+
+		public virtual Point? match_point (double x, double y)
+		{
+			unowned List<Point?> point = points.first();
+			while(point != null && point.next != null)
+			{
+				Point a = point.data;
+				Point b = point.next.data;
+				
+				if(Math.fabs(a.x - x) < (b.x-a.x)/2.0)
+				{
+					stdout.printf("value: %f %f\n", a.x, a.y);
+					return a;
+				}
+				else if(Math.fabs(x-b.x) < (b.x-a.x)/2.0)
+				{
+					stdout.printf("value1: %f %f\n", b.x, b.y);
+					return b;
+				}
+				point = point.next;
+			}	
+
+			return null;
+		}
 	}
 	/**************************************************************************
      * GRAPH
@@ -303,8 +394,11 @@ namespace Graph
 		private Pango.FontDescription  fd   = null;
 		private Cairo.Surface 		   surf = null;
 		private Cairo.Surface 		   grid = null;
+		private Cairo.Surface 		   highlight = null;
 
 
+		private double width = 0;
+		private double height = 0;
 
 		public double min_x_point = double.MAX;
 		public double min_y_point = double.MAX;
@@ -388,7 +482,7 @@ namespace Graph
 		private List<Point?> xticks = new List<Point?>();
 		public void add_xticks(double x, string value)
 		{
-			Point p = Point();
+			Point p = Point<int>();
 			p.x = x;
 			p.label = value;
 			xticks.append((owned)p);
@@ -400,7 +494,7 @@ namespace Graph
 		private List<Point?> yticks = new List<Point?>();
 		public void add_yticks(double y, string value)
 		{
-			Point p = Point();
+			Point p = Point<int>();
 			p.y = y;
 			p.label = value;
 			yticks.append((owned)p);
@@ -416,10 +510,10 @@ namespace Graph
 			this.clear();
 		}
 
-
-		public DataSet create_data_set()
+/*
+		public DataSet create_data_set(Type g)
 		{
-			DataSet ds = new DataSetLine();	
+			DataSet ds = new DataSetLine<g>();	
 			add_data_set(ds);
 			return ds;
 		}
@@ -436,7 +530,7 @@ namespace Graph
 			add_data_set(ds);
 			return ds;
 		}
-
+*/
 
 
 		private double left_offset		= 5.0;
@@ -460,6 +554,7 @@ namespace Graph
 			/* Invalidate the previous plot, so it is redrawn */
 			this.surf = null;
 			this.grid = null;
+			this.highlight = null;
 		}
 
 		private double calculate_step_size(double range)
@@ -513,10 +608,12 @@ namespace Graph
 			stdout.printf("max: %f\n", max);
 			for ( i =double.max(min_x_point,0) ; i <= max; i+=step)
 			{
+				stdout.printf("step: %f\n",i);
 				this.add_xticks(i, "%.2f".printf(i));
 			}
-			for ( i =-1/step; i > min_x_point; i-=1/step)
+			for ( i =-step; i > min_x_point; i-=step)
 			{
+				stdout.printf("step-: %f\n",i);
 				this.add_xticks(i, "%.2f".printf(i));
 			}
 			use_auto_xticks = true;
@@ -870,6 +967,9 @@ namespace Graph
 		 */
 		public void repaint(Cairo.Context ctx, Gtk.Allocation alloc)
 		{
+			height = (double)(alloc.height-bottom_offset-top_offset);
+			width = (double)(alloc.width-left_offset-right_offset);
+
 
 			/**
 			 * Paint the background white
@@ -892,9 +992,95 @@ namespace Graph
 			ctx.set_source_surface(this.surf, 0, 0);
 			ctx.paint();
 
+			if(this.highlight!= null)
+			{
+				ctx.translate(left_offset,top_offset);
+				ctx.set_source_surface(this.highlight, 0, 0);
+				ctx.paint();
+			}
+			
+
 		}
 
 		public signal void changed();
+
+		private void draw_highlight(DataSet ds, Cairo.Context ctx, Point p)
+		{
+			double x_range = max_x_point-min_x_point;
+			double y_range = max_y_point-min_y_point;
+			var layout = Pango.cairo_create_layout(ctx);
+			fd.set_absolute_size(_label_font_size);
+			layout.set_font_description(fd);
+			if(ds.format_callback != null)
+			{
+				layout.set_text(ds.format_callback(p.value),-1);
+			}else{
+				layout.set_text("x: %8.02f\ny: %8.02f".printf(p.x, p.y),-1);
+			}
+
+			int th,tw;
+			layout.get_pixel_size(out tw, out th);
+
+			double x_pos = double.max(double.min(width-tw-7, width*(p.x-min_x_point)/x_range-tw/2),1);
+			double y_pos = height*(1-(p.y-min_y_point)/y_range);
+			y_pos = double.max(1, y_pos-th-7);
+			y_pos = double.min(height-th-7, y_pos);
+
+			ctx.rectangle(x_pos, y_pos, tw+6, th+6);
+			ctx.set_source_rgba(1, 0.9, 0.5, 0.8);
+			ctx.fill_preserve();
+			ctx.set_source_rgba(0,0,0,1);
+			ctx.stroke();
+			ctx.move_to(x_pos+3, y_pos+3);
+			Pango.cairo_layout_path(ctx, layout);
+			ctx.fill();
+
+		}
+
+		public void highlight_point(double x, double y)
+		{
+			double x_range = max_x_point-min_x_point;
+			double y_range = max_y_point-min_y_point;
+			if(x < left_offset || x> (width+left_offset)) return;
+			if(y < top_offset || y > (height+top_offset)) return; 
+			foreach(var ds in dss)
+			{
+				stdout.printf("x: %f y: %f\n", 
+							min_x_point+x_range*((x-left_offset)/width),
+							min_y_point+y_range*((height - y+top_offset)/height));
+				Point? p = ds.match_point(
+							min_x_point+x_range*((x-left_offset)/width),
+							min_y_point+y_range*((height-y+top_offset)/height));
+				if(p != null)
+				{
+					if(this.highlight == null)
+					{
+						this.highlight = new Cairo.Surface.similar(this.surf,
+								Cairo.Content.COLOR_ALPHA,
+								(int)width, (int)height);
+					}
+					var ctx = new Cairo.Context(this.highlight);
+					ctx.set_operator(Cairo.Operator.CLEAR);
+					ctx.paint();
+
+					ctx.set_operator(Cairo.Operator.OVER);
+
+					ctx.rectangle( width*((p.x-min_x_point)/x_range)-2.5,
+							height*(1-(p.y-min_y_point)/y_range)-2.5, 5, 5);
+					ctx.stroke();
+					draw_highlight(ds,ctx,p);
+
+					this.changed();
+					return;
+				}
+			}
+			if(this.highlight != null)
+			{
+				var ctx = new Cairo.Context(this.highlight);
+				ctx.set_operator(Cairo.Operator.CLEAR);
+				ctx.paint();
+			}
+		}
 	}
 	public class Widget: Gtk.EventBox
 	{
@@ -924,6 +1110,12 @@ namespace Graph
 			graph.changed.connect((source)=>{
 				this.queue_draw();
 					});
+
+			this.add_events(Gdk.EventMask.POINTER_MOTION_MASK);
+			this.motion_notify_event.connect((source, event)=>{
+				graph.highlight_point(event.x, event.y);
+				return false;
+			});
 
 			this.size_allocate.connect(size_allocate_cb);
 			this.draw.connect(a_expose_event);
