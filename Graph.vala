@@ -64,7 +64,7 @@ namespace Graph
 			double total = 0;
 			uint num_points = 0;
 			_average = 0;
-			foreach(Point p in source.points)
+			foreach(Point<G> p in source.points)
 			{
 				total+= p.y;
 				num_points++;
@@ -102,7 +102,7 @@ namespace Graph
 			ctx.set_line_cap(Cairo.LineCap.ROUND);
 			ctx.set_source_rgb(r,g,b);
 
-			foreach(Point p in points)
+			foreach(Point<G> p in points)
 			{
 				ctx.line_to(
 						width*(p.x-min_x)/(x_range),
@@ -118,7 +118,7 @@ namespace Graph
 			if(dots)
 			{
 				ctx.set_source_rgb(r,g,b);
-				foreach(Point p in points)
+				foreach(Point<G> p in points)
 				{
 					ctx.arc(
 							width*(p.x-min_x)/(x_range),
@@ -145,7 +145,7 @@ namespace Graph
 			this.changed.connect((source)=>{
 				update_bar_width();
 				stdout.printf("Bar width: %f\n", bar_width);
-				unowned List<Point?> l = points.last();
+				unowned List<Point<G>?> l = points.last();
 				if(l != null) {
 					max_x_point = l.data.x+bar_width/2-1;
 					min_x_point = points.first().data.x-bar_width/2+1;
@@ -160,8 +160,8 @@ namespace Graph
 				bar_width = 20;
 				return;
 			}
-			Point prev = points.first().data;
-			foreach(Point p in points)
+			Point<G> prev = points.first().data;
+			foreach(Point<G> p in points)
 			{
 				if(prev != p)
 				{
@@ -181,8 +181,8 @@ namespace Graph
 			double y_range = max_y-min_y;
 			bar_width = double.min(bar_width, x_range-1);
 			stdout.printf("Bar width: %f\n", bar_width);
-			Point prev = points.first().data;
-			foreach(Point p in points)
+			Point<G> prev = points.first().data;
+			foreach(Point<G> p in points)
 			{
 				//if(prev != p) 
 				{
@@ -211,7 +211,7 @@ namespace Graph
 			unowned List<Point?> point = points.first();
 			while(point != null)
 			{
-				Point a = point.data;
+				Point<G> a = point.data;
 				
 				if(Math.fabs(a.x - x) < (bar_width/2-1))
 				{
@@ -242,7 +242,7 @@ namespace Graph
 			ctx.set_source_rgb(r,g,b);
 
 			ctx.move_to(width*(min_x_point-min_x)/x_range, height*(1+min_y/y_range));
-			foreach(Point p in points)
+			foreach(Point<G> p in points)
 			{
 				ctx.line_to(
 						width*(p.x-min_x)/(x_range),
@@ -256,7 +256,7 @@ namespace Graph
 			ctx.fill();
 
 			ctx.set_source_rgb(r,g,b);
-			foreach(Point p in points)
+			foreach(Point<G> p in points)
 			{
 				ctx.arc(
 						width*(p.x-min_x)/(x_range),
@@ -325,7 +325,7 @@ namespace Graph
 			if( y > max_y_point)	
 				max_y_point = y;
 
-			Point p = Point<G>();
+			Point<G> p = Point<G>();
 			p.x = x;
 			p.y = y;
 			points.append(p);
@@ -342,7 +342,7 @@ namespace Graph
 			if( y > max_y_point)	
 				max_y_point = y;
 
-			Point p = Point<G>();
+			Point<G> p = Point<G>();
 			p.x = x;
 			p.y = y;
 			p.value = value;
@@ -366,8 +366,8 @@ namespace Graph
 			unowned List<Point?> point = points.first();
 			while(point != null && point.next != null)
 			{
-				Point a = point.data;
-				Point b = point.next.data;
+				Point<G> a = point.data;
+				Point<G> b = point.next.data;
 				
 				if(Math.fabs(a.x - x) < (b.x-a.x)/2.0)
 				{
@@ -482,7 +482,7 @@ namespace Graph
 		private List<Point?> xticks = new List<Point?>();
 		public void add_xticks(double x, string value)
 		{
-			Point p = Point<int>();
+			Point<int> p = Point<int>();
 			p.x = x;
 			p.label = value;
 			xticks.append((owned)p);
@@ -494,7 +494,7 @@ namespace Graph
 		private List<Point?> yticks = new List<Point?>();
 		public void add_yticks(double y, string value)
 		{
-			Point p = Point<int>();
+			Point<int> p = Point<int>();
 			p.y = y;
 			p.label = value;
 			yticks.append((owned)p);
@@ -649,12 +649,12 @@ namespace Graph
 				stdout.printf("Do auto xticks\n");
 				this.auto_xticks();
 			}
-			foreach  ( Point p in xticks)
+			foreach  ( Point<int> p in xticks)
 			{
 				min_x_point = (p.x < min_x_point)?p.x:min_x_point;
 				max_x_point = (p.x > max_x_point)?p.x:max_x_point;
 			}
-			foreach  ( Point p in yticks)
+			foreach  ( Point<int> p in yticks)
 			{
 				min_y_point = (p.y < min_y_point)?p.y:min_y_point;
 				max_y_point = (p.y > max_y_point)?p.y:max_y_point;
@@ -681,7 +681,7 @@ namespace Graph
 			double text_height_offset = 0;
 			double text_width = 0;
 
-			foreach(weak Point p in yticks)
+			foreach(weak Point<int> p in yticks)
 			{
 				if(p.label != null)
 				{
@@ -691,7 +691,7 @@ namespace Graph
 					text_width_offset = double.max(text_width_offset, wt*1.2);
 				}
 			}
-			foreach(weak Point p in xticks)
+			foreach(weak Point<int> p in xticks)
 			{
 				if(p.label != null)
 				{
@@ -773,7 +773,7 @@ namespace Graph
 			uint req_entries = xticks.length()+1;
 
 			double text_width = 0;
-			foreach(weak Point p in xticks)
+			foreach(weak Point<int> p in xticks)
 			{
 				if(p.label != null)
 				{
@@ -791,7 +791,7 @@ namespace Graph
 				step*=2;
 			}
 			entries = 0;	
-			foreach(weak Point p in xticks)
+			foreach(weak Point<int> p in xticks)
 			{
 				if(entries%step == (step-1))
 				{
@@ -824,7 +824,7 @@ namespace Graph
 
 			double text_height = 0;
 			text_width = 0;
-			foreach(weak Point p in yticks)
+			foreach(weak Point<int> p in yticks)
 			{
 				if(p.label != null)
 				{
@@ -843,7 +843,7 @@ namespace Graph
 				step*=2;
 			}
 			entries = 0;	
-			foreach(weak Point p in yticks)
+			foreach(weak Point<int> p in yticks)
 			{
 				if(entries%step == (step-1))
 				{

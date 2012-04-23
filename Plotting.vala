@@ -252,7 +252,7 @@ Example:
 		var start = t.add_minutes(-t.get_minute());
 		var stop  = start.add_days(1);
 		var avg = es.get_average_energy(start,stop)*24/1000.0;
-		string retv = "x: %s\ny: %.02f kWh".printf(t.format("%B (%d/%m/%Y)"), avg); 
+		string retv = "x: %s\ny: %.02f kWh".printf(t.format("%j (%d/%m/%Y)"), avg); 
 		return retv;
 	}
 	private void plot_days(Graph.Graph graph)
@@ -272,7 +272,7 @@ Example:
 		ds3.min_y_point = 0;
 
 
-//		ds3.format_callback  = day_format_plot; 
+		ds3.format_callback  = day_format_plot; 
 
 
 		graph.add_xticks((double)stop.to_unix(),""); 
