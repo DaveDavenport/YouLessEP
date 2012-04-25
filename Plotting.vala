@@ -252,7 +252,7 @@ Example:
 		var start = t.add_minutes(-t.get_minute());
 		var stop  = start.add_days(1);
 		var avg = es.get_average_energy(start,stop)*24/1000.0;
-		string retv = "x: %s\ny: %.02f kWh".printf(t.format("%j (%d/%m/%Y)"), avg); 
+		string retv = "x: %s\ny: %.02f kWh".printf(t.format("(%A) %j (%d/%m/%Y)"), avg); 
 		return retv;
 	}
 	private void plot_days(Graph.Graph graph)

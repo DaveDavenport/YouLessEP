@@ -1036,7 +1036,14 @@ namespace Graph
 			ctx.fill();
 
 		}
-
+		public void highlight_clear()
+		{
+			if(this.highlight != null)
+			{
+				this.highlight = null;
+				this.changed();
+			}
+		}
 		public void highlight_point(double x, double y)
 		{
 			double x_range = max_x_point-min_x_point;
@@ -1101,6 +1108,10 @@ namespace Graph
 			}
 			_real_resize_timeout = GLib.Timeout.add(300, real_resize);
 		}
+
+
+		private uint32 _real_movement_timeout = 0;
+
 		public Widget()
 		{
 			/* make the event box paintable and give it an own window to paint on */
@@ -1113,7 +1124,16 @@ namespace Graph
 
 			this.add_events(Gdk.EventMask.POINTER_MOTION_MASK);
 			this.motion_notify_event.connect((source, event)=>{
-				graph.highlight_point(event.x, event.y);
+				if(_real_movement_timeout > 0) {
+					graph.highlight_clear();
+					GLib.Source.remove(_real_movement_timeout);
+				}
+				// timeout to 300 ms.
+				_real_movement_timeout = GLib.Timeout.add(300, ()=>{
+					graph.highlight_point(event.x, event.y);
+					_real_movement_timeout = 0;
+					return false;
+					});
 				return false;
 			});
 
