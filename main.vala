@@ -74,6 +74,7 @@ int main (string[] argv)
 			module = new Import(es);
 		}
 
+#if GUI
 		/**
 		 * Plot graphs
 		 */
@@ -81,7 +82,7 @@ int main (string[] argv)
 		{
 			module = new Plotting(es);
 		}
-
+#endif
 		/**
 		 * Statistics 
 		 */

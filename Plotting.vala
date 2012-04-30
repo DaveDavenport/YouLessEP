@@ -1,3 +1,4 @@
+#if GUI
 using GLib;
 using Gtk;
 
@@ -638,3 +639,4 @@ Example:
 
 	}
 }
+#endif

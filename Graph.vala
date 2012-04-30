@@ -1,3 +1,4 @@
+#if GUI
 using GLib;
 using Gtk;
 using Cairo;
@@ -1190,3 +1191,4 @@ namespace Graph
 
 	}
 }
+#endif

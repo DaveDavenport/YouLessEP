@@ -4,16 +4,21 @@ DEPENDENCIES=\
 	TODO
 PROGRAM=ep
 VERSION=0.0.1
+GUI?=1
 
 
 # install location.
 PREFIX?=$(HOME)/.local/
 
 PKGS=\
-	gtk+-3.0\
 	glib-2.0\
 	json-glib-1.0\
 	sqlite3
+
+ifeq ("$(GUI)", "1")
+	PKGS+=gtk+-3.0
+endif
+
 
 ##
 # Check packages
@@ -27,6 +32,11 @@ endif
 
 VALA_FLAGS=
 CSOURCES=
+
+ifeq ("$(GUI)", "1")
+	VALA_FLAGS+=-D GUI
+endif
+
 -include Makefile.settings
 ##
 # VALA flags.
@@ -36,6 +46,8 @@ VALA_FLAGS+=$(foreach PKG, $(PKGS), --pkg=$(PKG)) -g
 ##
 # Build program
 ##
+all: $(PROGRAM)
+
 $(PROGRAM): $(SOURCES) | $(DEPENDENCIES) 
 	valac -o $@ $^ $(VALA_FLAGS) 
 
