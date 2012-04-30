@@ -123,7 +123,7 @@ Example:
 			var num_days = start.get_day_of_year();
 
 			var avg = es.get_average_energy(start,stop)*24/1000.0;
-			stdout.printf("%2d                %8.02f kWh\n",num_days,  avg);
+			stdout.printf("%3d (%10s) %8.02f kWh\n",num_days,start.format("%A"), avg);
 		}
 		stdout.printf("===============================\n");
 	}
