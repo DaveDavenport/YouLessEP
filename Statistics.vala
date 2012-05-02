@@ -85,7 +85,8 @@ Example:
 	public override int execute()
 	{
 		double avg = es.get_average_energy(tstart, tstop);
-		double eng = es.get_energy(tstart, tstop);
+		TimeSpan span;
+		double eng = es.get_energy(tstart, tstop,out span);
 		stdout.printf("Range:            %s --> %s\n", tstart.format("%d/%m/%Y - %H:%M"),tstop.format("%d/%m/%Y - %H:%M"));
 		stdout.printf("Average power:    %8.02f W\n", avg);
 		stdout.printf("Energy consumed:  %8.02f kWh\n", eng/1000.0);

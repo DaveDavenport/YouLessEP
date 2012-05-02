@@ -150,6 +150,19 @@ class EnergyStorage
 
 		var val_obj = obj.get_array_member("val");
 
+		// check if all values are zero, if so, do not store.
+		bool nonzero = false;
+		foreach(weak Json.Node el in val_obj.get_elements())
+		{
+			string? a = el.get_string();
+			if(a != null && a.length > 0) { 
+				if(int.parse(el.get_string()) >0)
+				{
+					nonzero = true;
+				}
+			}
+		}
+		if(!nonzero) return retv;
 		foreach(weak Json.Node el in val_obj.get_elements())
 		{
 			string? a = el.get_string();
@@ -220,13 +233,14 @@ class EnergyStorage
 		start = this.get_starting_datetime(start);
 		stop = this.get_stopping_datetime(stop);
 		if(start == null || stop == null || start.to_unix() == 0 || stop.to_unix() == 0) return 0.0;
-		double energy = get_energy(start, stop);
+		TimeSpan span; 
+		double energy = get_energy(start, stop, out span);
 
 		if(start.equal(stop)) return 0.0;
-		return (energy*3600.0/(stop.to_unix()-start.to_unix()));
+		return (energy*3600.0/(span/TimeSpan.SECOND));  //(stop.to_unix()-start.to_unix()));
 	}
 
-	public double get_energy(owned DateTime? start = null, owned DateTime? stop = null)
+	public double get_energy(owned DateTime? start = null, owned DateTime? stop = null, out TimeSpan elapsed_time)
 	{
 		if(start == null) start = this.get_starting_datetime();
 		if(stop == null) stop = this.get_stopping_datetime();
@@ -240,7 +254,9 @@ class EnergyStorage
 		double val = 0.0;
 		foreach(var ep in eps)
 		{
-			TimeSpan diff = ep.time.difference(first.time);
+			// per one minute
+			TimeSpan diff = 60*TimeSpan.SECOND;//ep.time.difference(first.time);
+			elapsed_time += diff;
 			// Make seconds.
 			diff = diff/TimeSpan.SECOND;
 			if(diff > 0)
