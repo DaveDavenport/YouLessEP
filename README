@@ -2,12 +2,22 @@
 This is a small tool to parse and display statistics from a youless.
 See: http://youless.nl/ 
 
+=== Installation ===
+Install 
+
+PKG_CONFIG	UBUNTU
+json-glib-1.0	libjson-glib-dev
+sqlite3		libsqlite3-dev
+glib-2.0
+gtk+-3.0
+		valac
+
 
 === Download data ===
 Download json file from youless. Do this atleast every 30 minutes.
 Overlap is no problem, EnergyPoint will check for this.
 	
-	wget http://youless/a?f=j -o output.json
+	wget http://youless/a?f=j -O output.json
 
 
 === Import data ===
