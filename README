@@ -17,7 +17,8 @@ gtk+-3.0
 Download json file from youless. Do this atleast every 30 minutes.
 Overlap is no problem, EnergyPoint will check for this.
 	
-	wget http://youless/a?f=j -O output.json
+	wget "http://youless/V?f=j&h=1" -O `date +%Y-%m-%d-%H%M-1.json`
+	wget "http://youless/V?f=j&h=2" -O `date +%Y-%m-%d-%H%M-2.json`
 
 
 === Import data ===
