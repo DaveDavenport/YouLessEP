@@ -10,6 +10,10 @@ struct EnergyPoint
 	public int		power;
 }
 
+errordomain ErrorEnergyStorage {
+	OPENCREATE,
+	PREPARE_STATEMENT	
+}
 /**
  * Energy Storage
  */
@@ -27,13 +31,21 @@ class EnergyStorage
 	private Statement start_date_stmt;
 	private Statement get_data_stmt;
 
+
+
+
 	/**
 	 * Create a new Storage. 
 	 */
-	public EnergyStorage(string db_filename)
+	public EnergyStorage(string db_filename) throws ErrorEnergyStorage
 	{
 		_filename = db_filename;
-		Sqlite.Database.open(db_filename, out db);
+		int returnv = Sqlite.Database.open(db_filename, out db);
+
+		if(returnv != Sqlite.OK)
+		{
+			throw new ErrorEnergyStorage.OPENCREATE("Failed to open/create database: %s", db.errmsg());
+		}
 
 		// Create the DB
 		const string create_db = """
@@ -56,7 +68,7 @@ class EnergyStorage
 
 		if(db.prepare_v2(insert_db_str,-1, out insert_ep) == 1)
 		{
-			GLib.error("Failed to create stmt: %s", db.errmsg());
+			throw new ErrorEnergyStorage.PREPARE_STATEMENT("Failed to create stmt: %s", db.errmsg());
 		}
 
 
@@ -65,18 +77,18 @@ class EnergyStorage
 			""";
 		if(db.prepare_v2(insert_db_str,-1, out insert_ep) == 1)
 		{
-			GLib.error("Failed to create stmt: %s", db.errmsg());
+			throw new ErrorEnergyStorage.PREPARE_STATEMENT("Failed to create stmt: %s", db.errmsg());
 		}
 		const string transaction_stop_str = """
 				COMMIT;
 			""";
 		if(db.prepare_v2(transaction_start_str,-1, out transaction_start) == 1)
 		{
-			GLib.error("Failed to create stmt: %s", db.errmsg());
+			throw new ErrorEnergyStorage.PREPARE_STATEMENT("Failed to create stmt: %s", db.errmsg());
 		}
 		if(db.prepare_v2(transaction_stop_str,-1, out transaction_stop) == 1)
 		{
-			GLib.error("Failed to create stmt: %s", db.errmsg());
+			throw new ErrorEnergyStorage.PREPARE_STATEMENT("Failed to create stmt: %s", db.errmsg());
 		}
 
 		const string stop_date_stmt_str = """
@@ -85,7 +97,7 @@ class EnergyStorage
 
 		if(db.prepare_v2(stop_date_stmt_str,-1, out stop_date_stmt) == 1)
 		{
-			GLib.error("Failed to create stmt: %s", db.errmsg());
+			throw new ErrorEnergyStorage.PREPARE_STATEMENT("Failed to create stmt: %s", db.errmsg());
 		}
 
 		const string start_date_stmt_str = """
@@ -94,7 +106,7 @@ class EnergyStorage
 
 		if(db.prepare_v2(start_date_stmt_str,-1, out start_date_stmt) == 1)
 		{
-			GLib.error("Failed to create stmt: %s", db.errmsg());
+			throw new ErrorEnergyStorage.PREPARE_STATEMENT("Failed to create stmt: %s", db.errmsg());
 		}
 
 		const string get_data_stmt_str = """
@@ -102,7 +114,7 @@ class EnergyStorage
                 """;
 		if(db.prepare_v2(get_data_stmt_str,-1, out get_data_stmt) == 1)
 		{
-			GLib.error("Failed to create stmt: %s", db.errmsg());
+			throw new ErrorEnergyStorage.PREPARE_STATEMENT("Failed to create stmt: %s", db.errmsg());
 		}
 	}
 
@@ -249,6 +261,7 @@ class EnergyStorage
 		var eps = this.get_data(start, stop);
 
 		if(eps == null) return 0.0;
+
 
 		var first = eps.first().data;
 		double val = 0.0;

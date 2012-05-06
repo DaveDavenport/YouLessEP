@@ -61,7 +61,14 @@ int main (string[] argv)
 	/* Get user data dir */
 	var udd = GLib.Environment.get_user_data_dir();
 	var path = GLib.Path.build_filename(udd, "es.sqlite3");
-	EnergyStorage es = new EnergyStorage(path);
+	EnergyStorage es;
+	try {
+		es = new EnergyStorage(path);
+	} catch (GLib.Error e) {
+		stdout.printf("Failed to open/create database: %s: %s\n",
+				e.message, path);
+		return 0;
+	}
 
 	if(argv.length > 1)
 	{
