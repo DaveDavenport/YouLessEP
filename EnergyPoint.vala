@@ -245,7 +245,7 @@ class EnergyStorage
 		start = this.get_starting_datetime(start);
 		stop = this.get_stopping_datetime(stop);
 		if(start == null || stop == null || start.to_unix() == 0 || stop.to_unix() == 0) return 0.0;
-		TimeSpan span; 
+		TimeSpan span = 0; 
 		double energy = get_energy(start, stop, out span);
 
 		if(start.equal(stop)) return 0.0;
