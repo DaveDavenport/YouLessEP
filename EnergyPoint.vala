@@ -249,7 +249,7 @@ class EnergyStorage
 		double energy = get_energy(start, stop, out span);
 
 		if(start.equal(stop)) return 0.0;
-		return (energy*3600.0/(span/TimeSpan.SECOND));  //(stop.to_unix()-start.to_unix()));
+		return (energy/(span/TimeSpan.SECOND));  //(stop.to_unix()-start.to_unix()));
 	}
 
 	public double get_energy(owned DateTime? start = null, owned DateTime? stop = null, out TimeSpan elapsed_time)
@@ -274,7 +274,7 @@ class EnergyStorage
 			diff = diff/TimeSpan.SECOND;
 			if(diff > 0)
 			{
-				val += (first.power)/(double)diff;
+				val += (first.power)*60;
 			}
 			first = ep;
 		}

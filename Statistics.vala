@@ -89,7 +89,9 @@ Example:
 		double eng = es.get_energy(tstart, tstop,out span);
 		stdout.printf("Range:            %s --> %s\n", tstart.format("%d/%m/%Y - %H:%M"),tstop.format("%d/%m/%Y - %H:%M"));
 		stdout.printf("Average power:    %8.02f W\n", avg);
-		stdout.printf("Energy consumed:  %8.02f kWh\n", eng/1000.0);
+
+		span = tstop.difference(tstart);
+		stdout.printf("Energy consumed:  %8.02f kWh (%8.02f kWh estm.)\n", eng/(3600*1000.0), avg/(3600*1000)*(span/TimeSpan.SECOND));
 
 		if(do_day) {
 			statistics_day();
@@ -123,7 +125,7 @@ Example:
 			stop  = start.add_days(1);
 			var num_days = start.get_day_of_year();
 
-			var avg = es.get_average_energy(start,stop)*24/1000.0;
+			var avg = es.get_average_energy(start,stop)*24.0/1000.0;
 			stdout.printf("%3d (%10s) %8.02f kWh\n",num_days,start.format("%A"), avg);
 		}
 		stdout.printf("===============================\n");
@@ -150,7 +152,7 @@ Example:
 	private void weeks()
 	{
 		var start = tstart;
-		var stop = start.add_minutes(-start.get_minute());
+		var stop = start.add_minutes(-tstart.get_minute());
 		stop = stop.add_hours(-stop.get_hour());
 		stop = stop.add_days(-stop.get_day_of_week()+1);
 		stdout.printf("============  Week  ===========\n");
@@ -278,11 +280,11 @@ Example:
 		}
 
 		double total = 0;
+		stop = tstart.add_minutes(-tstart.get_minute());
+		stop = stop.add_hours(-stop.get_hour());
 		stdout.printf("Day:    Average:    Total:\n");
 		for(uint i = 0; i < 7; i++)
 		{
-			stop = tstart.add_minutes(-start.get_minute());
-			stop = stop.add_hours(-stop.get_hour());
 			stop = stop.add_days(-stop.get_day_of_week()+1);
 			if(num_week[i] > 0){
 				total+= 24/1000.0*week[i]/(double)num_week[i];

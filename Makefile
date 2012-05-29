@@ -30,18 +30,19 @@ ifeq ($(PKG_EXISTS),$(PKG_FALSE))
 $(error Not all dependencies are met. Check if $(PKGS) exists.)
 endif
 
-VALA_FLAGS=
+VALA_GUI=
 CSOURCES=
 
 ifeq ("$(GUI)", "1")
-	VALA_FLAGS+=-D GUI
+$(info GUI enabled)
+VALA_GUI+=-D GUI
 endif
 
 -include Makefile.settings
 ##
 # VALA flags.
 ##
-VALA_FLAGS+=$(foreach PKG, $(PKGS), --pkg=$(PKG)) -g 
+VALA_FLAGS= $(VALA_GUI) $(foreach PKG, $(PKGS), --pkg=$(PKG)) -g 
 
 ##
 # Build program
