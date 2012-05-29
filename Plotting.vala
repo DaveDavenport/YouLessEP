@@ -536,15 +536,15 @@ Example:
 						avr+=average[i]/8.0;
 					}
 					double value = double.min(avr, ep.power);
-					ds3.add_point((double)ep.time.to_unix(), value); 
+					ds3.add_point((double)ep.time, value); 
 					if(filter == null || filter.check(ep.power-value))
 					{
-						ds.add_point((double)ep.time.to_unix(), ep.power-value);
+						ds.add_point((double)ep.time, ep.power-value);
 					}
 					else
-						ds.add_point((double)ep.time.to_unix(), 0);
+						ds.add_point((double)ep.time, 0);
 				}else{
-					ds.add_point((double)ep.time.to_unix(), ep.power);
+					ds.add_point((double)ep.time, ep.power);
 				}
 			}
 		}
@@ -601,7 +601,7 @@ Example:
 				{
 					if(pp != null)
 					{
-						var diff = (ep.time.to_unix() - pp.time.to_unix());
+						var diff = (ep.time - pp.time);
 						diff = diff - diff%300;
 						stdout.printf("%f\n", diff);
 						int items = g.lookup((int)diff);

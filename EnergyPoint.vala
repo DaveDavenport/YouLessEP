@@ -6,7 +6,7 @@ using Sqlite;
  */
 struct EnergyPoint
 {
-	public DateTime time;
+	public int64   time;
 	public int		power;
 }
 
@@ -125,7 +125,7 @@ class EnergyStorage
 	private bool add_point(EnergyPoint ep)
 	{
 		var lir = db.last_insert_rowid();
-		insert_ep.bind_int64(1, ep.time.to_unix());	
+		insert_ep.bind_int64(1, ep.time);	
 		insert_ep.bind_int(2, ep.power);	
 
 		insert_ep.step();
@@ -180,7 +180,7 @@ class EnergyStorage
 			string? a = el.get_string();
 			if(a != null && a.length > 0) { 
 				EnergyPoint ep = EnergyPoint();
-				ep.time = dt;
+				ep.time = dt.to_unix();
 				ep.power = int.parse(el.get_string());
 				if(this.add_point(ep)) retv++;
 			}
@@ -225,7 +225,7 @@ class EnergyStorage
 					break;
 				case Sqlite.ROW:
 					EnergyPoint ep = EnergyPoint();
-					ep.time  = new GLib.DateTime.from_unix_local(get_data_stmt.column_int64(0));
+					ep.time  = get_data_stmt.column_int64(0);
 					ep.power = get_data_stmt.column_int(1);
 					eps.prepend(ep);
 					break;

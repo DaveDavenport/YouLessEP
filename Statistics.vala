@@ -231,7 +231,7 @@ Example:
 				{
 					if(pp != null)
 					{
-						var diff = (ep.time.to_unix() - pp.time.to_unix());
+						var diff = (ep.time - pp.time);
 						stdout.printf("%f\n", diff);
 						int items = g.lookup((int)diff);
 						{
