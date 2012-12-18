@@ -288,7 +288,7 @@ namespace Graph
 		public signal void changed();
 
 
-		public delegate string FormatTooltipCallback(G p);
+		public delegate string FormatTooltipCallback<T> (T p);
 
 		public FormatTooltipCallback? format_callback =null;
 

@@ -233,8 +233,11 @@ Example:
 			stop  = start.add_days(7);
 
 			stdout.printf("Range:            %s --> %s\n", start.format("%V %d/%m/%Y - %H:%M"),stop.format("%d/%m/%Y - %H:%M"));
-			var avg = es.get_average_energy(start,stop)*24*7/1000.0;
 
+            var value =es.get_average_energy(start,stop); 
+			var avg = 0.0;
+            if(value >= 0) avg = value*24*7/1000.0;
+            
 			stdout.printf("power: %.2f kWh\n", avg);
 			ds3.add_point((double)stop.to_unix()-3.5*24*60*60, avg);
 			graph.add_xticks((double)start.to_unix()+(3.5*24*60*60), start.format("%V"));
@@ -253,6 +256,7 @@ Example:
 		var start = t.add_minutes(-t.get_minute());
 		var stop  = start.add_days(1);
 		var avg = es.get_average_energy(start,stop)*24/1000.0;
+        if (avg < 0) avg = 0;
 		string retv = "x: %s\ny: %.02f kWh".printf(t.format("(%A) %j (%d/%m/%Y)"), avg); 
 		return retv;
 	}
@@ -286,6 +290,8 @@ Example:
 
 			stdout.printf("Range:%u            %s --> %s\n",day, start.format("%B %d/%m/%Y - %H:%M"),stop.format("%d/%m/%Y - %H:%M"));
 			var avg = es.get_average_energy(start,stop)*24/1000.0;
+
+            if(avg <0) avg = 0;
 
 			stdout.printf("power: %.2f kWh\n", avg);
 			ds3.add_point_value((double)start.to_unix()+(0.5*24*60*60), avg, start);
@@ -327,6 +333,7 @@ Example:
 
 			stdout.printf("Range:%u            %s --> %s\n",num_days, start.format("%B %d/%m/%Y - %H:%M"),stop.format("%d/%m/%Y - %H:%M"));
 			var avg = es.get_average_energy(start,stop)*num_days*24/1000.0;
+            if(avg < 0) avg = 0.0;
 
 			stdout.printf("power: %.2f kWh\n", avg);
 			ds3.add_point((double)start.to_unix()+(num_days*0.5*24*60*60), avg);
@@ -355,8 +362,11 @@ Example:
 			int d = start.get_day_of_week();
 			stop  = start.add_days(1);
 
-			week[d-1] += es.get_average_energy(start, stop);
-			num_week[d-1]++;
+            var val  = es.get_average_energy(start, stop);
+            if(val >= 0) {
+                week[d-1] += val;
+                num_week[d-1]++;
+            }
 
 		}
 
@@ -412,8 +422,11 @@ Example:
 			int d = start.get_hour();
 			stop  = start.add_hours(1);
 
-			hour[d] += es.get_average_energy(start, stop);
-			num_hour[d]++;
+            var val = es.get_average_energy(start, stop);
+            if(val >= 0) {
+                hour[d] += es.get_average_energy(start, stop);
+                num_hour[d]++;
+            }
 
 		}
 
