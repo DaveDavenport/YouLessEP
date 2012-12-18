@@ -247,8 +247,8 @@ class EnergyStorage
 		if(start == null || stop == null || start.to_unix() == 0 || stop.to_unix() == 0) return 0.0;
 		TimeSpan span = 0; 
 		double energy = get_energy(start, stop, out span);
-
-		if(start.equal(stop)) return 0.0;
+        if(span == 0) return -1;
+		if(start.equal(stop)) return -1;
 		return (energy/(span/TimeSpan.SECOND));  //(stop.to_unix()-start.to_unix()));
 	}
 

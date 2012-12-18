@@ -126,8 +126,10 @@ Example:
 			var num_days = start.get_day_of_year();
 
 			var avg = es.get_average_energy(start,stop)*24.0/1000.0;
-			stdout.printf("%3d (%10s) %8.02f kWh\n",num_days,start.format("%A"), avg);
-		}
+            if(avg >= 0) {
+                stdout.printf("%3d (%10s) %8.02f kWh\n",num_days,start.format("%A"), avg);
+            }
+        }
 		stdout.printf("===============================\n");
 	}
 	private void months()
@@ -145,9 +147,11 @@ Example:
 			var num_days = stop.add_seconds(-1).get_day_of_month();
 
 			var avg = es.get_average_energy(start,stop)*24*num_days/1000.0;
-			stdout.printf("%2d                %8.02f kWh\n",start.get_month(),  avg);
-		}
-		stdout.printf("===============================\n");
+            if(avg >= 0) {
+                stdout.printf("%2d                %8.02f kWh\n",start.get_month(),  avg);
+            }
+        }
+        stdout.printf("===============================\n");
 	}
 	private void weeks()
 	{
@@ -162,8 +166,10 @@ Example:
 			stop  = start.add_days(7);
 
 			var avg = es.get_average_energy(start,stop)*24*7/1000.0;
-			stdout.printf("%2d                %8.02f kWh\n",start.get_week_of_year(),  avg);
-		}
+            if(avg >= 0) {
+                stdout.printf("%2d                %8.02f kWh\n",start.get_week_of_year(),  avg);
+            }
+        }
 		stdout.printf("===============================\n");
 	}
 	// Show average over day. 
@@ -182,8 +188,12 @@ Example:
 			int d = start.get_hour();
 			stop  = start.add_hours(1);
 
-			hour[d] += es.get_average_energy(start, stop);
-			num_hour[d]++;
+            double result = es.get_average_energy(start, stop);
+            // Only if we measured something useful this hour. 
+            if(result > -1) {
+                hour[d] += result;
+                num_hour[d]++;
+            }
 
 		}
 		double total = 0;
@@ -274,10 +284,13 @@ Example:
 			int d = start.get_day_of_week();
 			stop  = start.add_days(1);
 
-			week[d-1] += es.get_average_energy(start, stop);
-			num_week[d-1]++;
 
-		}
+            double value = es.get_average_energy(start, stop);
+            if(value >= 0) {
+                week[d-1] += value;
+                num_week[d-1]++;
+            }
+        }
 
 		double total = 0;
 		stop = tstart.add_minutes(-tstart.get_minute());
