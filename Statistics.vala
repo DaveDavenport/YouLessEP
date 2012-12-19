@@ -237,13 +237,16 @@ Example:
                 if(!prev_detect && (ep.power-previous) > 0) {
                     if(pp != null) {
                         var t = new GLib.DateTime.from_unix_local(ep.time);
-                        stdout.printf("%s %lli\n", t.to_string(), ep.time-pp.time); 
+                        stdout.printf("/\\%s %lli\n", t.to_string(), ep.time-pp.time); 
                         g.insert(item,(int)(ep.time-pp.time));
                         item++;
+                        prev_detect = true;
                     }
                     pp = ep;
-                }else if (prev_detect && ep.power-previous < 0){
-                    prev_detect = !prev_detect; 
+                }else if (prev_detect && (ep.power-previous) < 0){
+                    var t = new GLib.DateTime.from_unix_local(ep.time);
+                    stdout.printf("\\/ %s %lli\n", t.to_string(), ep.time-pp.time); 
+                    prev_detect = false; 
                 }
             }
             previous = ep.power;
