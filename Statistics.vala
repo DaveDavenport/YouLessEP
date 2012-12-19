@@ -225,9 +225,29 @@ Example:
 		EnergyPoint? pp = null;
 		bool prev = false;
 		GLib.HashTable<int, int> g = new GLib.HashTable<int, int>(GLib.direct_hash, GLib.direct_equal);
+        
+        bool prev_detect = false;
+        double previous = 0;
+        int item = 0;
 		foreach ( EnergyPoint ep in es.get_data(tstart, tstop))
 		{
-			if(ep.power < (1.5*avr)) {	
+            if(filter.check(Math.fabs(ep.power-previous)))
+            {
+                stdout.printf("%f %f\n" , ep.power, previous);
+                if(!prev_detect && (ep.power-previous) > 0) {
+                    if(pp != null) {
+                        var t = new GLib.DateTime.from_unix_local(ep.time);
+                        stdout.printf("%s %lli\n", t.to_string(), ep.time-pp.time); 
+                        g.insert(item,(int)(ep.time-pp.time));
+                        item++;
+                    }
+                    pp = ep;
+                }else if (prev_detect && ep.power-previous < 0){
+                    prev_detect = !prev_detect; 
+                }
+            }
+            previous = ep.power;
+	/*		if(ep.power < (1.5*avr)) {	
 				average[iter++%8] = ep.power;
 			}else average[iter++%8] = avr;
 			avr = 0;
@@ -254,12 +274,13 @@ Example:
 			}
 			else {
 				prev = false;
-			}
+			}*/
 		}
 		var eps = g.get_keys();
 		eps.sort((a, b) => {
 			return b-a;
 		});
+        stdout.printf("==============\n");
 		foreach(int key in eps) 
 		{
 			stdout.printf("%4i %4i\n", key, g.get(key));
