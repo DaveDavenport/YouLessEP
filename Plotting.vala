@@ -212,6 +212,17 @@ Example:
 		}
 		return 0;
 	}
+	private string week_format_plot(DateTime? t)
+	{
+		var start = t.add_minutes(-t.get_minute());
+        start.add_days(-t.get_day_of_week()+1);
+		var stop  = start.add_days(7);
+		var avg = es.get_average_energy(start,stop)*24*7/1000.0;
+        if (avg < 0) avg = 0;
+		string retv = "x: %s (%s - %s)\ny: %.02f kWh".printf(
+                start.format("%V"),start.format("%d/%m/%Y"),stop.format("%d/%m/%Y"), avg); 
+        return retv;
+	}
 	private void plot_weeks(Graph.Graph graph)
 	{
 		var start = tstart;
@@ -223,8 +234,10 @@ Example:
 		graph.y_axis_label = "Energy (kWh)";
 		graph.x_axis_label = "Week";
 
-		var ds3 = new Graph.DataSetBar<EnergyPoint?>();//graph.create_data_set_bar();
+		var ds3 = new Graph.DataSetBar<DateTime>();//graph.create_data_set_bar();
 		graph.add_data_set(ds3);
+
+		ds3.format_callback  = week_format_plot; 
 		ds3.min_y_point = 0;
 		ds3.set_color(0.5,0.2,0.2);
 		while(stop.compare(tstop)< 0)
@@ -239,7 +252,7 @@ Example:
             if(value >= 0) avg = value*24*7/1000.0;
             
 			stdout.printf("power: %.2f kWh\n", avg);
-			ds3.add_point((double)stop.to_unix()-3.5*24*60*60, avg);
+			ds3.add_point_value((double)stop.to_unix()-3.5*24*60*60, avg,start);
 			graph.add_xticks((double)start.to_unix()+(3.5*24*60*60), start.format("%V"));
 		}
 
@@ -306,6 +319,16 @@ Example:
 			ds2.set_color(0.2,0.2,0.4);
 		}
 	}
+	private string month_format_plot(DateTime? t)
+	{
+		var start = t;
+		var stop  = start.add_months(1);
+		var avg = es.get_average_energy(start,stop)*(stop.difference(start)/(3600*1000*1000.0))/1000.0;
+        if (avg < 0) avg = 0;
+		string retv = "x: %s \ny: %.02f kWh".printf(
+                start.format("%B"), avg); 
+        return retv;
+	}
 	private void plot_months(Graph.Graph graph)
 	{
 		var start = tstart;
@@ -317,11 +340,13 @@ Example:
 		graph.y_axis_label = "Energy (kWh)";
 		graph.x_axis_label = "Month";
 
-		var ds3 = new Graph.DataSetBar<EnergyPoint?>();//graph.create_data_set_bar();
+		var ds3 = new Graph.DataSetBar<DateTime>();//graph.create_data_set_bar();
 		graph.add_data_set(ds3);
 		ds3.set_color(0.5,0.2,0.2);
 		// Graph 0 point  to 0
 		ds3.min_y_point = 0;
+		
+        ds3.format_callback  = month_format_plot; 
 
 		graph.add_xticks((double)stop.to_unix(),""); 
 		while(stop.compare(tstop)< 0)
@@ -336,7 +361,7 @@ Example:
             if(avg < 0) avg = 0.0;
 
 			stdout.printf("power: %.2f kWh\n", avg);
-			ds3.add_point((double)start.to_unix()+(num_days*0.5*24*60*60), avg);
+			ds3.add_point_value((double)start.to_unix()+(num_days*0.5*24*60*60), avg,start);
 			graph.add_xticks((double)start.to_unix()+(num_days*0.5*24*60*60), start.format("%B"));
 		}
 		graph.add_xticks((double)stop.to_unix(),""); 
