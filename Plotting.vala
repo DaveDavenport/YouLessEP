@@ -20,6 +20,7 @@ class Plotting : Module
 
 	// config options.
 	private bool do_svg 		   = false;
+    private bool do_png            = false;
 	private bool do_remove_avg     = false;
 	private string output_filename = "output.svg";
 	private uint output_width      = 800;
@@ -96,6 +97,15 @@ Example:
 				do_remove_avg = true;	
 			}else if (argv[i] == "pattern") {
 				plot_type = PlotType.PATTERN;	
+			}else if (argv[i] == "png") {
+				do_png = true;
+				i++;
+				if(i >= argv.length)
+				{
+					stdout.printf("Expected filename after png.\n");
+					return false;
+				}
+				output_filename = argv[i];	
 			}else if (argv[i] == "svg") {
 				do_svg = true;	
 				i++;
@@ -144,7 +154,7 @@ Example:
 				return false;
 			}
 		}
-		if(!do_svg)
+		if(!(do_svg && do_png))
 		{
 			Gtk.init(ref argv);
 		}
@@ -156,11 +166,16 @@ Example:
 
 		Graph.Widget widget   = null;
 		Graph.Svg    svg_plot = null;
+        Graph.PNG    png_plot = null;
 		Graph.Graph  graph    = null;
 		if(do_svg) 
 		{
 			svg_plot = new Graph.Svg();	
 			graph = svg_plot.graph;
+		} else if(do_png) 
+		{
+		    png_plot = new Graph.PNG();	
+			graph = png_plot.graph;
 		}else{
 			widget = new Graph.Widget();
 			graph = widget.graph;
@@ -194,7 +209,7 @@ Example:
 			pattern(graph, filter);
 		}
 
-		if(!do_svg)
+		if(!(do_svg || do_png))
 		{
 			Gtk.Window win = new Gtk.Window();
 
@@ -207,10 +222,12 @@ Example:
 			win.add(widget);
 			win.show_all();
 			Gtk.main();
-		}else{
+		}else if (do_svg) {
 			svg_plot.output(output_filename, output_width, output_height);
-		}
-		return 0;
+		} else if (do_png) {
+			png_plot.output(output_filename, output_width, output_height);
+        }
+        return 0;
 	}
 	private string week_format_plot(DateTime? t)
 	{

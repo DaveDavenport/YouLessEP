@@ -1153,6 +1153,25 @@ namespace Graph
 			return false;
 		}
 	}
+	public class PNG
+	{
+		public Graph graph = new Graph();
+		public PNG()
+		{
+		}
+		public void output(string filename, double width, double height)
+		{
+			Cairo.Surface sf = new Cairo.ImageSurface(Format.ARGB32,(int)width, (int)height);
+			graph.clear();
+			Gtk.Allocation alloc = Gtk.Allocation();
+			alloc.width = (int)width;
+			alloc.height = (int)height;
+			var ctx = new Cairo.Context(sf);
+			graph.repaint(ctx,alloc);	
+            sf.write_to_png(filename);
+		}
+
+	}
 	public class Svg
 	{
 		public Graph graph = new Graph();
