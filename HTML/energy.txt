@@ -1,0 +1,22 @@
+Energy report
+=============
+
+== Months ==
+
+image:./months.png[Energy per month]
+
+== Weeks ==
+
+image:weeks.png[Energy per week]
+
+== Days ==
+
+image:days.png[Energy per day]
+
+== Weekdays ==
+
+image:weekdays.png[Average energy per weekday]
+
+== Last week ==
+
+image:weekpoints.png[Detailed energy last day]
