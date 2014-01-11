@@ -115,6 +115,7 @@ Example:
 	}
 	private void days()
 	{
+        Pricing p = new Pricing(es);
 		var start = tstart;
 		var stop = start.add_minutes(-start.get_minute());
 		stop = stop.add_hours(-stop.get_hour());
@@ -125,9 +126,10 @@ Example:
 			stop  = start.add_days(1);
 			var num_days = start.get_day_of_year();
 
+            var price = p.calculate_price(start, stop);
 			var avg = es.get_average_energy(start,stop)*24.0/1000.0;
             if(avg >= 0) {
-                stdout.printf("%3d (%10s) %8.02f kWh\n",num_days,start.format("%A"), avg);
+                stdout.printf("%3d (%10s) %8.02f kWh (€ %.02f)\n",num_days,start.format("%A"), avg, price);
             }
         }
 		stdout.printf("===============================\n");
@@ -196,11 +198,13 @@ Example:
             }
 
 		}
+
 		double total = 0;
 		for(uint i = 0; i < 24; i++)
 		{
 			if(num_hour[i] > 0)
 			{
+                
 				stdout.printf("%2u                %8.02f W\n", i, hour[i]/(double)num_hour[i]);
 				total += hour[i]/(double)num_hour[i];
 			}

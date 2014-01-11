@@ -42,30 +42,30 @@ endif
 ##
 # VALA flags.
 ##
-VALA_FLAGS= $(VALA_GUI) $(foreach PKG, $(PKGS), --pkg=$(PKG)) -g 
+VALA_FLAGS= $(VALA_GUI) $(foreach PKG, $(PKGS), --pkg=$(PKG)) -g
 
 ##
 # Build program
 ##
 all: $(PROGRAM)
 
-$(PROGRAM): $(SOURCES) | $(DEPENDENCIES) 
-	valac -o $@ $^ $(VALA_FLAGS) 
+$(PROGRAM): $(SOURCES) | $(DEPENDENCIES)
+	valac -X -lm -o $@ $^ $(VALA_FLAGS)
 
 ###
 # Clean up
 ###
 .PHONY: clean
-clean: $(PROGRAM) $(CSOURCES) 
-	rm -f $^ 
+clean: $(PROGRAM) $(CSOURCES)
+	rm -f $^
 
-enable-cfiles: 
+enable-cfiles:
 	$(info Enabling building of C files)
 	@rm -f $(PROGRAM) $(CSOURCES)
 	@echo "VALA_FLAGS:=--save-temps" > Makefile.settings
 	@echo "CSOURCES="$(SOURCES:%.vala=%.c)"" >> Makefile.settings
 
-disable-cfiles: 
+disable-cfiles:
 	$(info Disable building of C files)
 	@rm -f $(PROGRAM) $(CSOURCES)
 	@rm -f Makefile.settings
@@ -73,9 +73,9 @@ disable-cfiles:
 DIST_NAME=$(PROGRAM)-$(shell date +%d%m%Y)
 DIST_FILE=$(DIST_NAME).tar.gz
 .PHONY: dist
-dist: $(DIST_FILE) 
+dist: $(DIST_FILE)
 
-$(DIST_FILE): $(SOURCES) $(DEPENDENCIES) 
+$(DIST_FILE): $(SOURCES) $(DEPENDENCIES)
 	mkdir $(DIST_NAME)
 	cp $^   $(DIST_NAME)
 	tar cvvzf $@ $(DIST_NAME)
@@ -90,9 +90,9 @@ BIN_PATH=$(PREFIX)/bin/
 install: $(BIN_PATH)/$(PROGRAM)
 
 $(BIN_PATH): $(PROGRAM)
-	mkdir -p $@ 
+	mkdir -p $@
 
-$(BIN_PATH)/$(PROGRAM): $(PROGRAM) | $(BIN_PATH) 
+$(BIN_PATH)/$(PROGRAM): $(PROGRAM) | $(BIN_PATH)
 	install $^ $@
 
 .PHONY: uninstall
